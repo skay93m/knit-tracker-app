@@ -6,9 +6,11 @@ import PackageDescription
 let package = Package(
     name: "knit-tracker-app",
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .executableTarget(
-            name: "knit-tracker-app"),
+        .target(
+            name: "knit_tracker_app",
+            dependencies: []),
+        .testTarget(
+            name: "knit_tracker_appTests",
+            dependencies: ["knit_tracker_app"]),
     ]
 )
