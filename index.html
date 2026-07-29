@@ -36,15 +36,26 @@ Rows 26-103: Repeat 25</textarea>
             </div>
 
             <div class="card active-tracker">
-                <h3>2. Active Row Tracker</h3>
+                <h3>2. Tracker Panel</h3>
                 <div class="row-status">
                     <span class="label">KNITTING</span>
                     <span id="active-row-num" class="row-value">1</span>
                     <span id="row-progress" class="progress-pct">Row 1 of 103</span>
                 </div>
                 <div class="tracker-actions">
-                    <button id="undo-btn" class="btn secondary-btn" disabled>Undo Row (-1)</button>
+                    <button id="undo-btn" class="btn secondary-btn" disabled>Undo Row</button>
                     <button id="next-btn" class="btn primary-btn success-btn">Complete Row</button>
+                </div>
+                
+                <div class="stitch-status" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                    <div class="row-status">
+                        <span class="label">ACTIVE STITCH</span>
+                        <span id="active-stitch-num" class="row-value" style="font-size: 32px;">1</span>
+                    </div>
+                    <div class="tracker-actions" style="margin-top: 8px;">
+                        <button id="prev-stitch-btn" class="btn secondary-btn">Prev Stitch</button>
+                        <button id="next-stitch-btn" class="btn primary-btn" style="background-color: var(--secondary-denim);">Next (Space)</button>
+                    </div>
                 </div>
             </div>
 

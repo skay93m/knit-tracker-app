@@ -1,6 +1,7 @@
 // State variables
 let appState = {
     currentRow: 1,
+    currentStitch: 1, // Active stitch tracking coordinate within the row
     targetRows: 103,
     columnsCount: 126,
     gridData: [], // 2D array: row 0 is Row 1 (bottom), row 102 is Row 103 (top)
@@ -20,6 +21,9 @@ const activeRowVal = document.getElementById("active-row-num");
 const rowProgress = document.getElementById("row-progress");
 const undoBtn = document.getElementById("undo-btn");
 const nextBtn = document.getElementById("next-btn");
+const activeStitchVal = document.getElementById("active-stitch-num");
+const prevStitchBtn = document.getElementById("prev-stitch-btn");
+const nextStitchBtn = document.getElementById("next-stitch-btn");
 const clearBtn = document.getElementById("clear-btn");
 const zoomInBtn = document.getElementById("zoom-in");
 const zoomOutBtn = document.getElementById("zoom-out");
@@ -221,8 +225,8 @@ function renderGrid() {
             cell.innerText = symbol === "-" ? "" : symbol;
             
             // Set hover tooltip showing coordinates (Right-to-Left stitch numbering)
+            const stitchNum = symbol !== "" ? (activeStitchCount - c) : 0;
             if (symbol !== "") {
-                const stitchNum = activeStitchCount - c;
                 cell.title = `Row ${rowNum}, Stitch ${stitchNum}`;
             } else {
                 cell.title = "Spacer (Increase Buffer)";
@@ -231,6 +235,10 @@ function renderGrid() {
             // Highlight row if it is the current active knitting row (ONLY in View Mode)
             if (appState.mode === "view" && rowNum === appState.currentRow && symbol !== "") {
                 cell.classList.add("active-row-cell");
+                // Highlight the specific active stitch cell
+                if (stitchNum === appState.currentStitch) {
+                    cell.classList.add("active-stitch-cell");
+                }
             }
             
             // Interaction: Click to cycle symbol (ONLY in Edit Mode, disabled on spacers)
@@ -293,10 +301,13 @@ function appendStitchNumbersRow(maxCols) {
 function updateTrackerUI() {
     activeRowVal.innerText = appState.currentRow;
     rowProgress.innerText = `Row ${appState.currentRow} of ${appState.targetRows}`;
+    activeStitchVal.innerText = appState.currentStitch;
     
     // Disable counter control buttons if we are in Edit Mode
     undoBtn.disabled = appState.mode === "edit" || appState.currentRow <= 1;
     nextBtn.disabled = appState.mode === "edit" || appState.currentRow >= appState.targetRows;
+    prevStitchBtn.disabled = appState.mode === "edit";
+    nextStitchBtn.disabled = appState.mode === "edit";
     
     // Visually style the tracker panel differently when editing
     const activeCard = document.querySelector(".active-tracker");
@@ -308,20 +319,67 @@ function updateTrackerUI() {
 
     // Highlight cells of active row
     const cells = document.querySelectorAll(".stitch-cell");
-    cells.forEach(c => c.classList.remove("active-row-cell"));
+    cells.forEach(c => {
+        c.classList.remove("active-row-cell");
+        c.classList.remove("active-stitch-cell");
+    });
     
     renderGrid();
     if (appState.mode === "view") {
-        scrollToActiveRow();
+        scrollToActiveStitch();
     }
 }
 
-function scrollToActiveRow() {
-    // Find any cell belonging to the active row and scroll viewport to center it
-    const activeCells = document.querySelectorAll(".active-row-cell");
-    if (activeCells.length > 0) {
-        const targetCell = activeCells[Math.floor(activeCells.length / 2)];
-        targetCell.scrollIntoView({ behavior: "smooth", block: "center" });
+function scrollToActiveStitch() {
+    // Find the cell with active-stitch-cell and scroll the viewport to center it horizontally and vertically
+    const activeCell = document.querySelector(".active-stitch-cell");
+    if (activeCell) {
+        activeCell.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }
+}
+
+// Stitch Navigation Logic
+function nextStitch() {
+    if (appState.mode !== "view") return;
+    
+    // Get active stitches length in the current row (ignoring blank buffer spaces)
+    const rowData = appState.gridData[appState.currentRow - 1];
+    const activeStitchCount = rowData ? rowData.filter(s => s !== "").length : appState.columnsCount;
+    
+    if (appState.currentStitch < activeStitchCount) {
+        appState.currentStitch++;
+        saveToLocalStorage();
+        updateTrackerUI();
+    } else {
+        // Finished the row! Move to next row and reset stitch to 1
+        if (appState.currentRow < appState.targetRows) {
+            appState.currentRow++;
+            appState.currentStitch = 1;
+            saveToLocalStorage();
+            updateTrackerUI();
+        } else {
+            alert("Congratulations! You have completed the project chart!");
+        }
+    }
+}
+
+function prevStitch() {
+    if (appState.mode !== "view") return;
+    
+    if (appState.currentStitch > 1) {
+        appState.currentStitch--;
+        saveToLocalStorage();
+        updateTrackerUI();
+    } else {
+        // Go back to the end of the previous row
+        if (appState.currentRow > 1) {
+            appState.currentRow--;
+            const prevRowData = appState.gridData[appState.currentRow - 1];
+            const prevActiveStitchCount = prevRowData ? prevRowData.filter(s => s !== "").length : appState.columnsCount;
+            appState.currentStitch = prevActiveStitchCount;
+            saveToLocalStorage();
+            updateTrackerUI();
+        }
     }
 }
 
@@ -345,6 +403,7 @@ modeEditBtn.addEventListener("click", () => {
 nextBtn.addEventListener("click", () => {
     if (appState.currentRow < appState.targetRows) {
         appState.currentRow++;
+        appState.currentStitch = 1; // Reset stitch to start of new row
         saveToLocalStorage();
         updateTrackerUI();
     }
@@ -353,14 +412,30 @@ nextBtn.addEventListener("click", () => {
 undoBtn.addEventListener("click", () => {
     if (appState.currentRow > 1) {
         appState.currentRow--;
+        appState.currentStitch = 1; // Reset stitch to start of previous row
         saveToLocalStorage();
         updateTrackerUI();
+    }
+});
+
+nextStitchBtn.addEventListener("click", nextStitch);
+prevStitchBtn.addEventListener("click", prevStitch);
+
+// Keyboard Spacebar listener for fast stitch increments
+window.addEventListener("keydown", (e) => {
+    // Ignore spacebar triggers if typing inside input boxes
+    if (document.activeElement === patternInput) return;
+    
+    if (e.code === "Space") {
+        e.preventDefault(); // Prevent standard page jumping scroll
+        nextStitch();
     }
 });
 
 compileBtn.addEventListener("click", () => {
     compilePattern();
     appState.currentRow = 1;
+    appState.currentStitch = 1;
     updateTrackerUI();
 });
 
@@ -368,6 +443,7 @@ clearBtn.addEventListener("click", () => {
     if (confirm("Reset current row tracking and clear modifications?")) {
         localStorage.clear();
         appState.currentRow = 1;
+        appState.currentStitch = 1;
         appState.mode = "view";
         
         // Reset UI buttons
@@ -399,6 +475,7 @@ zoomOutBtn.addEventListener("click", () => {
 // ==========================================
 function saveToLocalStorage() {
     localStorage.setItem("knitflow_current_row", appState.currentRow);
+    localStorage.setItem("knitflow_current_stitch", appState.currentStitch);
     localStorage.setItem("knitflow_target_rows", appState.targetRows);
     localStorage.setItem("knitflow_columns_count", appState.columnsCount);
     localStorage.setItem("knitflow_grid_data", JSON.stringify(appState.gridData));
@@ -408,6 +485,7 @@ function saveToLocalStorage() {
 
 function loadFromLocalStorage() {
     const savedRow = localStorage.getItem("knitflow_current_row");
+    const savedStitch = localStorage.getItem("knitflow_current_stitch");
     const savedTarget = localStorage.getItem("knitflow_target_rows");
     const savedCols = localStorage.getItem("knitflow_columns_count");
     const savedGrid = localStorage.getItem("knitflow_grid_data");
@@ -415,6 +493,7 @@ function loadFromLocalStorage() {
     const savedMode = localStorage.getItem("knitflow_mode");
     
     if (savedRow) appState.currentRow = parseInt(savedRow);
+    if (savedStitch) appState.currentStitch = parseInt(savedStitch);
     if (savedTarget) appState.targetRows = parseInt(savedTarget);
     if (savedCols) appState.columnsCount = parseInt(savedCols);
     if (savedGrid) appState.gridData = JSON.parse(savedGrid);
