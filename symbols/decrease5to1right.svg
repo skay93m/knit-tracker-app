@@ -31,11 +31,23 @@
      id="layer1">
     <path
        id="path4739"
-       d="m 7.5833334,1045.8621 -5.6666667,5.6667"
+       d="m 7.5833335,1045.8621 -5.6666667,5.6667"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <path
        id="path4743"
-       d="m 7.5833334,1051.5288 -2.6666667,-2.6667"
+       d="m 7.5833335,1051.5288 -2.6666667,-2.6667"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path11667"
+       d="m 4.7500001,1049.0288 v 2.6667"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.59999996;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.59999996;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 4.7500001,1049.0288 1.4020945,2.6393"
+       id="path825" />
+    <path
+       id="path829"
+       d="m 4.7500001,1049.0288 -1.4020945,2.6393"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.59999996;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
   </g>
 </svg>

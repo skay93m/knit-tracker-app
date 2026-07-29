@@ -30,8 +30,8 @@
      transform="translate(0.08333333,-1045.0288)"
      id="layer1">
     <path
-       id="path11085"
-       d="m 4.75,1045.6955 v 6"
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.59999996;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+       id="rect6050"
+       d="m 0,1045.0166 h 9.5 v 7.3333 H 0 Z"
+       style="fill:#666666;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.59999996;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
   </g>
 </svg>
