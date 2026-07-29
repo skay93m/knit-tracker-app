@@ -235,8 +235,8 @@ function renderGrid() {
             // Highlight row if it is the current active knitting row (ONLY in View Mode)
             if (appState.mode === "view" && rowNum === appState.currentRow && symbol !== "") {
                 cell.classList.add("active-row-cell");
-                // Highlight the specific active stitch cell
-                if (stitchNum === appState.currentStitch) {
+                // Highlight a 10-stitch window starting from currentStitch
+                if (stitchNum >= appState.currentStitch && stitchNum < appState.currentStitch + 10) {
                     cell.classList.add("active-stitch-cell");
                 }
             }
