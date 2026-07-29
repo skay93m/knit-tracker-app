@@ -52,13 +52,70 @@ window.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // PARSER ENGINE
 // ==========================================
-// Helper to get virtual stitch width (e.g. c2r cable spans 4 columns)
+// Helper to get virtual stitch width (e.g. c2r cable spans 4 columns, c3r spans 6)
 function getStitchWidth(symbol) {
     if (symbol === "c2r" || symbol === "c2l") return 4;
+    if (symbol === "c3r" || symbol === "c3l") return 6;
     return 1;
 }
 
 let compilerWarnings = [];
+
+// Parse segment sequences (e.g. A:25, B:11...)
+function parseSegments(sequenceText, stitchDictionary) {
+    const sections = sequenceText.split(",").map(s => s.trim());
+    let rowStitches = [];
+    
+    sections.forEach(sec => {
+        const parts = sec.split(":");
+        if (parts.length === 2) {
+            const patternName = parts[0].trim().toLowerCase();
+            const count = parseInt(parts[1].replace(/\(.*\)/, "").trim());
+            
+            let segment = [];
+            const definition = stitchDictionary[patternName];
+            
+            if (definition && definition.symbols.length > 0) {
+                // Validate repeat multiples and trigger alerts
+                const repeatSize = definition.repeat;
+                if (count % repeatSize !== 0) {
+                    compilerWarnings.push(`⚠️ **Alert**: Pattern ${patternName.toUpperCase()} has block width ${count}, which is not a multiple of its stitch repeat size (${repeatSize}).`);
+                }
+                
+                // Populate segment by cycling symbols and inserting spans
+                let currentSegWidth = 0;
+                let idx = 0;
+                while (currentSegWidth < count) {
+                    const sym = definition.symbols[idx % definition.symbols.length];
+                    const symWidth = getStitchWidth(sym);
+                    
+                    if (currentSegWidth + symWidth <= count) {
+                        segment.push(sym);
+                        if (symWidth > 1) {
+                            // Push empty span-holder tags for the expanded column layout cells
+                            for (let s = 1; s < symWidth; s++) {
+                                segment.push("span-holder");
+                            }
+                        }
+                        currentSegWidth += symWidth;
+                    } else {
+                        // Remaining space is too small, pad with standard Knit
+                        while (currentSegWidth < count) {
+                            segment.push("|");
+                            currentSegWidth++;
+                        }
+                    }
+                    idx++;
+                }
+            } else {
+                // Fallback to stockinette
+                segment = Array(count).fill("|");
+            }
+            rowStitches = rowStitches.concat(segment);
+        }
+    });
+    return rowStitches;
+}
 
 function compilePattern() {
     const text = patternInput.value;
@@ -111,10 +168,19 @@ function compilePattern() {
             }
         }
         
-        // Dynamically find the maximum row boundary mentioned in the text (e.g., Rows 103-120)
-        const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+        // Dynamically find the maximum row boundary mentioned in the text
+        const rangeMatch = line.match(/rows?\s+([\d,-]+)/);
         if (rangeMatch) {
-            totalRows = Math.max(totalRows, parseInt(rangeMatch[2]));
+            const rangeStr = rangeMatch[1];
+            if (rangeStr.includes("-")) {
+                const end = parseInt(rangeStr.split("-")[1]);
+                totalRows = Math.max(totalRows, end);
+            } else if (rangeStr.includes(",")) {
+                const rowNums = rangeStr.split(",").map(n => parseInt(n));
+                totalRows = Math.max(totalRows, ...rowNums);
+            } else {
+                totalRows = Math.max(totalRows, parseInt(rangeStr));
+            }
             recipe.totalRows = totalRows;
         }
     });
@@ -157,86 +223,79 @@ function compilePattern() {
             }
         }
         
-        // --- B. Row 25 Setup & Increase Row (Using Stitch Dictionary) ---
-        else if (line.startsWith("row 25:")) {
-            const sectionsText = line.replace("row 25:", "").trim();
-            const sections = sectionsText.split(",").map(s => s.trim());
+        // --- B. Row List Parser (e.g. Rows 1,3,7,9: A:9, B:2...) ---
+        else if (line.match(/^rows?\s+([\d,]+):/)) {
+            const match = line.match(/^rows?\s+([\d,]+):(.*)$/);
+            const rowNums = match[1].split(",").map(n => parseInt(n.trim()));
+            const sequenceText = match[2].trim();
             
             recipe.shapingBlocks.push({
-                rows: "25",
+                rows: match[1],
                 type: "segments",
-                sequence: sectionsText
+                sequence: sequenceText
             });
             
-            let row25Stitches = [];
-            
-            sections.forEach(sec => {
-                const parts = sec.split(":");
-                if (parts.length === 2) {
-                    const patternName = parts[0].trim().toLowerCase();
-                    const count = parseInt(parts[1].replace(/\(.*\)/, "").trim());
-                    
-                    let segment = [];
-                    const definition = stitchDictionary[patternName];
-                    
-                    if (definition && definition.symbols.length > 0) {
-                        // Validate repeat multiples and trigger alerts
-                        const repeatSize = definition.repeat;
-                        if (count % repeatSize !== 0) {
-                            compilerWarnings.push(`⚠️ **Row 25 Alert**: Pattern ${patternName.toUpperCase()} has block width ${count}, which is not a multiple of its stitch repeat size (${repeatSize}).`);
-                        }
-                        
-                        // Populate segment by cycling symbols and inserting spans
-                        let currentSegWidth = 0;
-                        let idx = 0;
-                        while (currentSegWidth < count) {
-                            const sym = definition.symbols[idx % definition.symbols.length];
-                            const symWidth = getStitchWidth(sym);
-                            
-                            if (currentSegWidth + symWidth <= count) {
-                                segment.push(sym);
-                                if (symWidth > 1) {
-                                    // Push empty span-holder tags for the expanded column layout cells
-                                    for (let s = 1; s < symWidth; s++) {
-                                        segment.push("span-holder");
-                                    }
-                                }
-                                currentSegWidth += symWidth;
-                            } else {
-                                // Remaining space is too small for a multi-stitch cable, pad with standard Knit
-                                while (currentSegWidth < count) {
-                                    segment.push("|");
-                                    currentSegWidth++;
-                                }
-                            }
-                            idx++;
-                        }
-                    } else {
-                        // Fallback to stockinette
-                        segment = Array(count).fill("|");
-                    }
-                    row25Stitches = row25Stitches.concat(segment);
+            const compiledStitches = parseSegments(sequenceText, stitchDictionary);
+            rowNums.forEach(rowNum => {
+                if (rowNum <= totalRows) {
+                    parsedGrid[rowNum - 1] = [...compiledStitches];
                 }
             });
-            parsedGrid[24] = row25Stitches;
         }
         
-        // --- C. Repeat Setup (Rows 26-103: Repeat 25) ---
-        else if (line.includes("repeat 25")) {
+        // --- B2. Single Row Setup (e.g. Row 25: A:25, B:11...) ---
+        else if (line.match(/^row\s+(\d+):/)) {
+            const match = line.match(/^row\s+(\d+):(.*)$/);
+            const rowNum = parseInt(match[1]);
+            const sequenceText = match[2].trim();
+            
+            recipe.shapingBlocks.push({
+                rows: rowNum.toString(),
+                type: "segments",
+                sequence: sequenceText
+            });
+            
+            const compiledStitches = parseSegments(sequenceText, stitchDictionary);
+            if (rowNum <= totalRows) {
+                parsedGrid[rowNum - 1] = compiledStitches;
+            }
+        }
+        
+        // --- C. Repeat Setup (e.g. Rows 11-60: Repeat 1-10) ---
+        else if (line.includes("repeat")) {
             const rangeMatch = line.match(/rows (\d+)-(\d+)/);
-            if (rangeMatch) {
+            const repeatMatch = line.match(/repeat\s+([\d-]+)/);
+            
+            if (rangeMatch && repeatMatch) {
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
+                const sourceStr = repeatMatch[1];
                 
                 recipe.shapingBlocks.push({
                     rows: `${startRow}-${endRow}`,
                     type: "repeat",
-                    target: 25
+                    target: sourceStr
                 });
                 
-                const row25Data = [...parsedGrid[24]];
+                let sourceStart = 25;
+                let sourceEnd = 25;
+                if (sourceStr.includes("-")) {
+                    const parts = sourceStr.split("-");
+                    sourceStart = parseInt(parts[0]);
+                    sourceEnd = parseInt(parts[1]);
+                } else {
+                    sourceStart = parseInt(sourceStr);
+                    sourceEnd = sourceStart;
+                }
+                
+                const sourceLen = sourceEnd - sourceStart + 1;
+                
                 for (let r = startRow - 1; r < endRow; r++) {
-                    parsedGrid[r] = [...row25Data];
+                    const offset = (r - (startRow - 1)) % sourceLen;
+                    const sourceRowIndex = sourceStart - 1 + offset;
+                    if (parsedGrid[sourceRowIndex]) {
+                        parsedGrid[r] = [...parsedGrid[sourceRowIndex]];
+                    }
                 }
             }
         }
@@ -388,14 +447,38 @@ function renderGrid() {
             const cell = document.createElement("div");
             let symbolClass = "";
             
-            // 2. Render 4-stitch spanned cable blocks
-            if (symbol === "c2r" || symbol === "c2l") {
-                symbolClass = symbol === "c2r" ? "cable-span-4 c2r-symbol" : "cable-span-4 c2l-symbol";
-                const isC2R = symbol === "c2r";
+            // 2. Render 4-stitch and 6-stitch spanned cable blocks
+            if (symbol === "c2r" || symbol === "c2l" || symbol === "c3r" || symbol === "c3l") {
+                const is6 = symbol === "c3r" || symbol === "c3l";
+                symbolClass = is6 ? `cable-span-6 ${symbol}-symbol` : `cable-span-4 ${symbol}-symbol`;
                 
-                // Render official JIS SVG cable cross graphic
-                const file = isC2R ? "crossright" : "crossleft";
-                cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
+                if (is6) {
+                    const isC3L = symbol === "c3l";
+                    // Render official JIS 3/3 Left/Right Cable crossover vector lines
+                    cell.innerHTML = isC3L ? `
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                        <line x1="0" y1="24" x2="72" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="18" y1="24" x2="90" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="72" y1="24" x2="0" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                        <line x1="90" y1="24" x2="18" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                      </svg>
+                    ` : `
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                        <line x1="72" y1="24" x2="0" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="90" y1="24" x2="18" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="0" y1="24" x2="72" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                        <line x1="18" y1="24" x2="90" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                      </svg>
+                    `;
+                } else {
+                    // Render official JIS SVG 2x2 cable cross graphic
+                    const file = symbol === "c2r" ? "crossright" : "crossleft";
+                    cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
+                }
             } else {
                 // Render standard Japanese JIS SVG vector graphics
                 if (symbol === "-") {
@@ -428,7 +511,7 @@ function renderGrid() {
             const stitchNum = (symbol !== "" && symbol !== "span-holder") ? 
                               rowData.slice(c).filter(s => s !== "" && s !== "span-holder").length : 0;
             if (symbol !== "" && symbol !== "span-holder") {
-                const label = (symbol === "c2r" || symbol === "c2l") ? "Cable (4 sts)" : "Stitch";
+                const label = (symbol === "c2r" || symbol === "c2l" || symbol === "c3r" || symbol === "c3l") ? "Cable" : "Stitch";
                 cell.title = `Row ${rowNum}, ${label} ${stitchNum}`;
             } else {
                 cell.title = symbol === "span-holder" ? "Spanned Cell" : "Spacer (Shaping Buffer)";
@@ -687,15 +770,16 @@ paletteBtns.forEach(btn => {
         const targetStitch = btn.getAttribute("data-stitch");
         const rowData = appState.gridData[r];
         
-        // Handle Cable Merges (C2R/C2L require 4 horizontal cells)
-        if (targetStitch === "c2r" || targetStitch === "c2l") {
-            if (c + 3 >= rowData.length) {
-                alert("Not enough stitches to the left to place a 4-stitch cable!");
+        // Handle Cable Merges (C2R/C2L require 4 cells, C3R/C3L require 6 cells)
+        if (targetStitch === "c2r" || targetStitch === "c2l" || targetStitch === "c3r" || targetStitch === "c3l") {
+            const width = (targetStitch === "c3r" || targetStitch === "c3l") ? 6 : 4;
+            if (c + (width - 1) >= rowData.length) {
+                alert(`Not enough stitches to the left to place a ${width}-stitch cable!`);
                 return;
             }
             
             // Check that we are not overwriting empty buffer spaces
-            const targetSlice = rowData.slice(c, c + 4);
+            const targetSlice = rowData.slice(c, c + width);
             if (targetSlice.some(s => s === "")) {
                 alert("Cannot place a cable over shaping buffer spacers!");
                 return;
@@ -703,17 +787,18 @@ paletteBtns.forEach(btn => {
             
             // Apply cable spans
             appState.gridData[r][c] = targetStitch;
-            appState.gridData[r][c + 1] = "span-holder";
-            appState.gridData[r][c + 2] = "span-holder";
-            appState.gridData[r][c + 3] = "span-holder";
+            for (let i = 1; i < width; i++) {
+                appState.gridData[r][c + i] = "span-holder";
+            }
         } else {
             // Unmerge cable if editing the start cell of a cable
             const currentSymbol = appState.gridData[r][c];
-            if (currentSymbol === "c2r" || currentSymbol === "c2l") {
-                if (c + 3 < rowData.length) {
-                    appState.gridData[r][c + 1] = "|";
-                    appState.gridData[r][c + 2] = "|";
-                    appState.gridData[r][c + 3] = "|";
+            if (currentSymbol === "c2r" || currentSymbol === "c2l" || currentSymbol === "c3r" || currentSymbol === "c3l") {
+                const width = (currentSymbol === "c3r" || currentSymbol === "c3l") ? 6 : 4;
+                if (c + (width - 1) < rowData.length) {
+                    for (let i = 1; i < width; i++) {
+                        appState.gridData[r][c + i] = "|";
+                    }
                 }
             }
             

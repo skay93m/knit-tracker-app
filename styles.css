@@ -419,6 +419,14 @@ textarea:focus {
     overflow: hidden;
 }
 
+.stitch-cell.cable-span-6 {
+    grid-column: span 6;
+    width: 144px; /* 6 columns * 24px width */
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+}
+
 /* Hide grid elements that are occupied by the spanning cable block */
 .stitch-cell.span-holder {
     display: none !important;
