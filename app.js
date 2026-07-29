@@ -469,28 +469,20 @@ function renderGrid() {
                 
                 if (is6) {
                     const isC3L = symbol === "c3l";
-                    // Draw a custom 6-column vector layout connecting each column center point
+                    // Draw a single crossing line connecting the centers of the two 3-stitch blocks (Track 1 at 36px and Track 4 at 108px)
                     cell.innerHTML = isC3L ? `
                       <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <!-- Underlap lines slanting bottom-left to top-right (dashed) -->
-                        <line x1="12" y1="24" x2="84" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="60" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <!-- Overlap lines slanting bottom-right to top-left (solid) -->
-                        <line x1="84" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Underlap line (dashed) slanting from bottom-left (36px) to top-right (108px) -->
+                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-dasharray="3,3"/>
+                        <!-- Overlap line (solid) slanting from bottom-right (108px) to top-left (36px) -->
                         <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="132" y1="24" x2="60" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     ` : `
                       <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <!-- Underlap lines slanting bottom-right to top-left (dashed) -->
-                        <line x1="84" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="132" y1="24" x2="60" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <!-- Overlap lines slanting bottom-left to top-right (solid) -->
-                        <line x1="12" y1="24" x2="84" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Underlap line (dashed) slanting from bottom-right (108px) to top-left (36px) -->
+                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-dasharray="3,3"/>
+                        <!-- Overlap line (solid) slanting from bottom-left (36px) to top-right (108px) -->
                         <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="60" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     `;
                 } else {
