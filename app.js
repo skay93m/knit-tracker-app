@@ -203,28 +203,55 @@ function compilePattern() {
             }
         }
 
-        // --- D. Dynamic Shaping (Rows 103-120: st st inc/dec 1 at each end of the row) ---
-        else if ((line.includes("inc ") || line.includes("dec ")) && 
+        // --- D. Dynamic Shaping (Support both Japanese '1-1-18' and English 'dec 1 at each end' notations) ---
+        else if ((line.includes("inc ") || line.includes("dec ") || line.match(/(\d+)-(\d+)-(\d+)/)) && 
                  (line.includes("end of each") || line.includes("each end") || line.includes("both ends"))) {
             const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+            const formulaMatch = line.match(/(\d+)-(\d+)-(\d+)/);
+            
             if (rangeMatch) {
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
-                const isIncrease = line.includes("inc ");
+                
+                // Default settings
+                let isIncrease = line.includes("inc ");
+                let stepRows = 1;
+                let decStitches = 1;
+                let times = endRow - startRow + 1; // Default to every row in range
+                
+                // Parse Japanese formula parameters if available (e.g. 1-1-18)
+                if (formulaMatch) {
+                    stepRows = parseInt(formulaMatch[1]);
+                    decStitches = parseInt(formulaMatch[2]);
+                    times = parseInt(formulaMatch[3]);
+                    // If formula matches but "inc" isn't explicitly written, default to decrease
+                    isIncrease = line.includes("inc "); 
+                } else {
+                    // English single step defaults
+                    decStitches = parseInt(line.match(/(?:inc|dec)\s+(\d+)/)?.[1]) || 1;
+                }
+                
                 const atBothEnds = line.includes("each end") || line.includes("both ends");
                 
                 // Base width on the row prior to startRow (e.g. Row 102 width = 127)
                 let currentWidth = parsedGrid[startRow - 2] ? parsedGrid[startRow - 2].filter(s => s !== "").length : castOn;
                 
                 for (let r = startRow - 1; r < endRow; r++) {
-                    const shift = atBothEnds ? 2 : 1;
-                    currentWidth += isIncrease ? shift : -shift;
+                    const relativeRow = r - (startRow - 1) + 1; // 1-indexed relative row
+                    
+                    // Symmetrical shaping occurs every "stepRows" rows, up to "times" occurrences
+                    const isShapingRow = (relativeRow % stepRows === 0) && (relativeRow / stepRows <= times);
+                    
+                    if (isShapingRow) {
+                        const shift = atBothEnds ? (decStitches * 2) : decStitches;
+                        currentWidth += isIncrease ? shift : -shift;
+                    }
                     
                     // Populate row with stockinette (All Knits)
                     let rowStitches = Array(currentWidth).fill("|");
                     
-                    if (currentWidth >= 2 && atBothEnds) {
-                        // Place symbols at both edges
+                    if (isShapingRow && currentWidth >= 2 && atBothEnds) {
+                        // Symmetrical border symbols at both edges
                         if (isIncrease) {
                             rowStitches[0] = "o";
                             rowStitches[currentWidth - 1] = "o";
@@ -232,7 +259,7 @@ function compilePattern() {
                             rowStitches[0] = "\\"; // SSK left decrease at start of row
                             rowStitches[currentWidth - 1] = "/"; // K2tog right decrease at end of row
                         }
-                    } else if (currentWidth >= 1) {
+                    } else if (isShapingRow && currentWidth >= 1) {
                         // Single-sided edge symbol
                         rowStitches[currentWidth - 1] = isIncrease ? "o" : "/";
                     }
