@@ -1,66 +1,114 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {
-	};
+	classes = {};
 	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B5DEBBAF36C458E9D924CFE /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B82463C68C49E7B5C5E61C /* App.swift */; };
-		57B1AF6C0AAF4FD79D098059 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CB382C358F403AB6909D86 /* Models.swift */; };
-		1AD10FDF4A7E495C8EE385CA /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883E816CB0CD4D7C9FC8C252 /* Storage.swift */; };
-		E95D08BDAEA24D8A9FD20F93 /* TrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D423058DAF649FE85EFB320 /* TrackerView.swift */; };
-		1CF603C862F24BCF866CD753 /* EditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0B5EAD70AB4C778D741FC7 /* EditorView.swift */; };
-		A040EBA610014775B0B4E006 /* WatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0631B56994034B709378ABBE /* WatchView.swift */; };
-		6AA0B0E09B3640B69BBC3385 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1257A01051AF4429A34C77DB /* Theme.swift */; };
-		4B32D62DBAAD41F299595BF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71760F6C9440430D8491B853 /* Assets.xcassets */; };
+		A5213706D17448668AB9CBCD /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6679F4FAAFFC4593A1411DA1; };
+		EAB9BF771BCC4570AFA4CB3B /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446A45C128694736BF92AA72; };
+		708543D6455943ADA52A2C21 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9922E72C7FE64B36ABFE2299; };
+		920A9B80D6F34345826E6063 /* TrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609A1746782A4A2F9D522B67; };
+		D0B8E91989854783A5B9AC32 /* EditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7415D76EEF33405FA9C5C42A; };
+		4AFD9C84C60A453CB2053DC8 /* WatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B093C04CC84AD7B0EE50D2; };
+		D0140E99BB184C328FE0B47D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D6BBB0251D4611872173A6; };
+		71AF09B0E9AD4DEBB1A8D1AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCBED345A11844BAB38CE063; };
+		E6F4DF08F4944A6B9CA7094D /* KnitFlow Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 73A7800C0F0F46FCA3A64F53; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F5946AFC7C434AF9AA2ECA95 /* KnitFlowWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ECED2B6960D4C53A621650C; };
+		2BAF9ADF0BC84EFF8AFF4871 /* WatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F582F528FC47C5A8AD0E6B; };
+		C16A85303E1045428F5EC20A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D686875D0864BE9AECECA61; };
+		86032D686AC94B57AEEC5FD2 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65C9AED2993B4098B48C5A4E; };
+		9A0F37E3D7E44020B951CF61 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9360A3E063442C29E1E7B84; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3D418203EDF64BE0954326C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DC1692501B2A467FA4F78FBC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2FF9A79A371241AA8A76D4C8;
+			remoteInfo = "KnitFlow Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		091DFA748BFE47A088E13579 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E6F4DF08F4944A6B9CA7094D /* KnitFlow Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		86B82463C68C49E7B5C5E61C /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = App.swift; path = App.swift; sourceTree = "<group>"; };
-		59CB382C358F403AB6909D86 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
-		883E816CB0CD4D7C9FC8C252 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Storage.swift; path = Storage/Storage.swift; sourceTree = "<group>"; };
-		4D423058DAF649FE85EFB320 /* TrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrackerView.swift; path = Views/TrackerView.swift; sourceTree = "<group>"; };
-		3D0B5EAD70AB4C778D741FC7 /* EditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EditorView.swift; path = Views/EditorView.swift; sourceTree = "<group>"; };
-		0631B56994034B709378ABBE /* WatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchView.swift; path = Views/WatchView.swift; sourceTree = "<group>"; };
-		1257A01051AF4429A34C77DB /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Views/Theme.swift; sourceTree = "<group>"; };
-		F7A5B41E2D3F4FF59A52449C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		71760F6C9440430D8491B853 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		E515312240354477989B131F /* KnitFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KnitFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6679F4FAAFFC4593A1411DA1 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = App.swift; path = App.swift; sourceTree = "<group>"; };
+		446A45C128694736BF92AA72 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
+		9922E72C7FE64B36ABFE2299 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Storage.swift; path = Storage/Storage.swift; sourceTree = "<group>"; };
+		609A1746782A4A2F9D522B67 /* TrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrackerView.swift; path = Views/TrackerView.swift; sourceTree = "<group>"; };
+		7415D76EEF33405FA9C5C42A /* EditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EditorView.swift; path = Views/EditorView.swift; sourceTree = "<group>"; };
+		C6B093C04CC84AD7B0EE50D2 /* WatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchView.swift; path = Views/WatchView.swift; sourceTree = "<group>"; };
+		C4D6BBB0251D4611872173A6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Views/Theme.swift; sourceTree = "<group>"; };
+		F5CB3419E1394B03A0BA11DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FCBED345A11844BAB38CE063 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B74DD34F715F4CBA87E68CBC /* KnitFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KnitFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7ECED2B6960D4C53A621650C /* KnitFlowWatchApp.swift (Watch) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KnitFlowWatchApp.swift; path = WatchApp/KnitFlowWatchApp.swift; sourceTree = "<group>"; };
+		B6F582F528FC47C5A8AD0E6B /* WatchView.swift (Watch) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchView.swift; path = Views/WatchView.swift; sourceTree = "<group>"; };
+		4D686875D0864BE9AECECA61 /* Models.swift (Watch) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
+		65C9AED2993B4098B48C5A4E /* Theme.swift (Watch) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Views/Theme.swift; sourceTree = "<group>"; };
+		356A601936704FB38CE3061D /* Watch Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = WatchApp/Info.plist; sourceTree = "<group>"; };
+		A9360A3E063442C29E1E7B84 /* Watch Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WatchApp/Assets.xcassets; sourceTree = "<group>"; };
+		73A7800C0F0F46FCA3A64F53 /* KnitFlow Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KnitFlow Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		4224D1A34AA74637B982C90E /* Frameworks */ = {
+		1C72F62E1CE045659218566B /* Frameworks (iOS) */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-			);
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EADC451B6EF1498DB94AE387 /* Frameworks (Watch) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3DF6CD930C6E4EE89E0F9E16 = {
+		E97899FE5D1B4E55BE0D07CC = {
 			isa = PBXGroup;
 			children = (
-				86B82463C68C49E7B5C5E61C /* App.swift */,
-				59CB382C358F403AB6909D86 /* Models.swift */,
-				883E816CB0CD4D7C9FC8C252 /* Storage.swift */,
-				4D423058DAF649FE85EFB320 /* TrackerView.swift */,
-				3D0B5EAD70AB4C778D741FC7 /* EditorView.swift */,
-				0631B56994034B709378ABBE /* WatchView.swift */,
-				1257A01051AF4429A34C77DB /* Theme.swift */,
-				71760F6C9440430D8491B853 /* Assets.xcassets */,
-				F7A5B41E2D3F4FF59A52449C /* Info.plist */,
-				3D16456C29C4421FBBD3675A /* Products */,
+				6679F4FAAFFC4593A1411DA1 /* App.swift */,
+				446A45C128694736BF92AA72 /* Models.swift */,
+				9922E72C7FE64B36ABFE2299 /* Storage.swift */,
+				609A1746782A4A2F9D522B67 /* TrackerView.swift */,
+				7415D76EEF33405FA9C5C42A /* EditorView.swift */,
+				C6B093C04CC84AD7B0EE50D2 /* WatchView.swift */,
+				C4D6BBB0251D4611872173A6 /* Theme.swift */,
+				7ECED2B6960D4C53A621650C /* KnitFlowWatchApp.swift (Watch) */,
+				B6F582F528FC47C5A8AD0E6B /* WatchView.swift (Watch) */,
+				4D686875D0864BE9AECECA61 /* Models.swift (Watch) */,
+				65C9AED2993B4098B48C5A4E /* Theme.swift (Watch) */,
+				FCBED345A11844BAB38CE063 /* Assets.xcassets */,
+				F5CB3419E1394B03A0BA11DE /* Info.plist */,
+				A9360A3E063442C29E1E7B84 /* Watch Assets.xcassets */,
+				356A601936704FB38CE3061D /* Watch Info.plist */,
+				7CD7D6C5D323455E8DC83259 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		3D16456C29C4421FBBD3675A /* Products */ = {
+		7CD7D6C5D323455E8DC83259 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E515312240354477989B131F /* KnitFlow.app */,
+				B74DD34F715F4CBA87E68CBC /* KnitFlow.app */,
+				73A7800C0F0F46FCA3A64F53 /* KnitFlow Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,91 +116,125 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		50703877C202466986DC3F74 /* KnitFlow */ = {
+		ACBE6F8E9841444389B15872 /* KnitFlow */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2F29D447E81548108A3D22B8 /* Build configuration list for PBXNativeTarget "KnitFlow" */;
+			buildConfigurationList = FCA53F6D819F452BB1FB4168;
 			buildPhases = (
-				624C9B9E315D4B50A8AB1A51 /* Sources */,
-				4224D1A34AA74637B982C90E /* Frameworks */,
-				BBCBBF958CEB45BA850007E1 /* Resources */,
+				7479D553D2934E7298194F56 /* Sources */,
+				1C72F62E1CE045659218566B /* Frameworks */,
+				B93CACD0D3894BEC9FFEFADA /* Resources */,
+				091DFA748BFE47A088E13579 /* Embed Watch Content */,
 			);
-			buildRules = (
-			);
+			buildRules = ();
 			dependencies = (
+				FC0CE4308C8A48E08B9F8814 /* PBXTargetDependency */,
 			);
 			name = KnitFlow;
 			productName = KnitFlow;
-			productReference = E515312240354477989B131F /* KnitFlow.app */;
+			productReference = B74DD34F715F4CBA87E68CBC /* KnitFlow.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2FF9A79A371241AA8A76D4C8 /* KnitFlow Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0406E48C743F4894951D62AC;
+			buildPhases = (
+				0DE2A63A1FC54BD1B4DB997B /* Sources */,
+				EADC451B6EF1498DB94AE387 /* Frameworks */,
+				EEC598D7CFA54E8AA0B036EE /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "KnitFlow Watch App";
+			productName = "KnitFlow Watch App";
+			productReference = 73A7800C0F0F46FCA3A64F53 /* KnitFlow Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		50500E20006849A79D696EAC /* Project object */ = {
+		DC1692501B2A467FA4F78FBC /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					50703877C202466986DC3F74 = {
-						CreatedOnToolsVersion = 16.0;
-					};
+					ACBE6F8E9841444389B15872 = { CreatedOnToolsVersion = 16.0; };
+					2FF9A79A371241AA8A76D4C8 = { CreatedOnToolsVersion = 16.0; };
 				};
 			};
-			buildConfigurationList = 7F209A46D3ED4BC89A0D1B60 /* Build configuration list for PBXProject "KnitFlow" */;
+			buildConfigurationList = BAFBD4C13310412DA32A081D;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-				Base,
-			);
-			mainGroup = 3DF6CD930C6E4EE89E0F9E16;
-			productRefGroup = 3D16456C29C4421FBBD3675A /* Products */;
+			knownRegions = (en, Base);
+			mainGroup = E97899FE5D1B4E55BE0D07CC;
+			productRefGroup = 7CD7D6C5D323455E8DC83259 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				50703877C202466986DC3F74 /* KnitFlow */,
+				ACBE6F8E9841444389B15872 /* KnitFlow */,
+				2FF9A79A371241AA8A76D4C8 /* KnitFlow Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		BBCBBF958CEB45BA850007E1 /* Resources */ = {
+		B93CACD0D3894BEC9FFEFADA /* Resources (iOS) */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-				4B32D62DBAAD41F299595BF1 /* Assets.xcassets in Resources */,
-			);
+			files = (71AF09B0E9AD4DEBB1A8D1AB /* Assets.xcassets in Resources */,);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEC598D7CFA54E8AA0B036EE /* Resources (Watch) */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (9A0F37E3D7E44020B951CF61 /* Assets.xcassets in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		624C9B9E315D4B50A8AB1A51 /* Sources */ = {
+		7479D553D2934E7298194F56 /* Sources (iOS) */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0B5DEBBAF36C458E9D924CFE /* App.swift in Sources */,
-				57B1AF6C0AAF4FD79D098059 /* Models.swift in Sources */,
-				1AD10FDF4A7E495C8EE385CA /* Storage.swift in Sources */,
-				E95D08BDAEA24D8A9FD20F93 /* TrackerView.swift in Sources */,
-				1CF603C862F24BCF866CD753 /* EditorView.swift in Sources */,
-				A040EBA610014775B0B4E006 /* WatchView.swift in Sources */,
-				6AA0B0E09B3640B69BBC3385 /* Theme.swift in Sources */,
+				A5213706D17448668AB9CBCD /* App.swift in Sources */,
+				EAB9BF771BCC4570AFA4CB3B /* Models.swift in Sources */,
+				708543D6455943ADA52A2C21 /* Storage.swift in Sources */,
+				920A9B80D6F34345826E6063 /* TrackerView.swift in Sources */,
+				D0B8E91989854783A5B9AC32 /* EditorView.swift in Sources */,
+				4AFD9C84C60A453CB2053DC8 /* WatchView.swift in Sources */,
+				D0140E99BB184C328FE0B47D /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0DE2A63A1FC54BD1B4DB997B /* Sources (Watch) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F5946AFC7C434AF9AA2ECA95 /* KnitFlowWatchApp.swift in Sources */,
+				2BAF9ADF0BC84EFF8AFF4871 /* WatchView.swift in Sources */,
+				C16A85303E1045428F5EC20A /* Models.swift in Sources */,
+				86032D686AC94B57AEEC5FD2 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		FC0CE4308C8A48E08B9F8814 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2FF9A79A371241AA8A76D4C8 /* KnitFlow Watch App */;
+			targetProxy = 3D418203EDF64BE0954326C5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		1B1466D7271D48D08B11E7A3 /* Debug */ = {
+		D7F4C1F9BC1F4981A7C3E593 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -174,16 +256,13 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -192,29 +271,22 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SIMULATOR_DEPLOYMENT_TARGET = 17.0;
 			};
 			name = Debug;
 		};
-		50A5B5CAEDEC435EBEE0C1BF /* Release */ = {
+		6E93300593194346AA61D044 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -236,16 +308,13 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -254,21 +323,17 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
+				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		B57C598D35F54AAC8A253FB2 /* Debug */ = {
+		3C03D6972BDA4CCBB81AB2A2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -289,7 +354,7 @@
 			};
 			name = Debug;
 		};
-		519DAD0DAE104D42805AB478 /* Release */ = {
+		9C890CF82313437E833115AD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -310,29 +375,70 @@
 			};
 			name = Release;
 		};
+		635EA2B759934104961E97F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WatchApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.knitflow.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		97B3D4E088064319A08E653D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WatchApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.knitflow.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		7F209A46D3ED4BC89A0D1B60 /* Build configuration list for PBXProject "KnitFlow" */ = {
+		BAFBD4C13310412DA32A081D /* Build configuration list for PBXProject "KnitFlow" */ = {
 			isa = XCConfigurationList;
-			buildConfigurations = (
-				1B1466D7271D48D08B11E7A3 /* Debug */,
-				50A5B5CAEDEC435EBEE0C1BF /* Release */,
-			);
+			buildConfigurations = (D7F4C1F9BC1F4981A7C3E593 /* Debug */, 6E93300593194346AA61D044 /* Release */,);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2F29D447E81548108A3D22B8 /* Build configuration list for PBXNativeTarget "KnitFlow" */ = {
+		FCA53F6D819F452BB1FB4168 /* Build configuration list for PBXNativeTarget "KnitFlow" */ = {
 			isa = XCConfigurationList;
-			buildConfigurations = (
-				B57C598D35F54AAC8A253FB2 /* Debug */,
-				519DAD0DAE104D42805AB478 /* Release */,
-			);
+			buildConfigurations = (3C03D6972BDA4CCBB81AB2A2 /* Debug */, 9C890CF82313437E833115AD /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0406E48C743F4894951D62AC /* Build configuration list for PBXNativeTarget "KnitFlow Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (635EA2B759934104961E97F8 /* Debug */, 97B3D4E088064319A08E653D /* Release */,);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
-	rootObject = 50500E20006849A79D696EAC /* Project object */;
+	rootObject = DC1692501B2A467FA4F78FBC /* Project object */;
 }

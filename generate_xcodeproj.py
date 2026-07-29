@@ -1,371 +1,463 @@
 #!/usr/bin/env python3
 """
-Generates KnitFlow.xcodeproj from scratch.
-Run: python3 generate_xcodeproj.py
+Generates KnitFlow.xcodeproj with both iOS and watchOS targets.
+
+Run:  python3 generate_xcodeproj.py
 Then: open KnitFlow.xcodeproj
+      Select "KnitFlow (iOS)" scheme → choose an iPhone sim → ⌘R
+      Select "KnitFlow Watch App" scheme → choose a paired Watch sim → ⌘R
 """
 
-import os, uuid, textwrap
+import os, uuid
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+BASE = os.path.dirname(os.path.abspath(__file__))
 
-def new_id():
-    """24-char uppercase hex Xcode object ID."""
+def uid():
     return uuid.uuid4().hex[:24].upper()
 
-# ── Object IDs ────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Object IDs
+# ─────────────────────────────────────────────────────────────────────────────
 
-PROJECT_ID          = new_id()
-TARGET_ID           = new_id()
-BUILD_CONFIG_LIST_PROJECT = new_id()
-BUILD_CONFIG_LIST_TARGET  = new_id()
-CONFIG_DEBUG_PROJECT  = new_id()
-CONFIG_RELEASE_PROJECT= new_id()
-CONFIG_DEBUG_TARGET   = new_id()
-CONFIG_RELEASE_TARGET = new_id()
-SOURCES_PHASE_ID    = new_id()
-RESOURCES_PHASE_ID  = new_id()
-FRAMEWORKS_PHASE_ID = new_id()
-MAIN_GROUP_ID       = new_id()
-PRODUCTS_GROUP_ID   = new_id()
-PRODUCT_REF_ID      = new_id()
+# Project
+PROJECT_ID                 = uid()
+PROJECT_CFG_LIST           = uid()
+PROJECT_CFG_DEBUG          = uid()
+PROJECT_CFG_RELEASE        = uid()
+MAIN_GROUP                 = uid()
+PRODUCTS_GROUP             = uid()
 
-# Source files: (display name, relative path from project root, file ref id, build file id)
-SOURCES = [
-    ("App.swift",          "App.swift"),
-    ("Models.swift",       "Models/Models.swift"),
-    ("Storage.swift",      "Storage/Storage.swift"),
-    ("TrackerView.swift",  "Views/TrackerView.swift"),
-    ("EditorView.swift",   "Views/EditorView.swift"),
-    ("WatchView.swift",    "Views/WatchView.swift"),
-    ("Theme.swift",        "Views/Theme.swift"),
+# iOS target
+IOS_TARGET                 = uid()
+IOS_CFG_LIST               = uid()
+IOS_CFG_DEBUG              = uid()
+IOS_CFG_RELEASE            = uid()
+IOS_SOURCES_PHASE          = uid()
+IOS_RESOURCES_PHASE        = uid()
+IOS_FRAMEWORKS_PHASE       = uid()
+IOS_EMBED_WATCH_PHASE      = uid()
+IOS_PRODUCT_REF            = uid()
+IOS_INFO_REF               = uid()
+IOS_ASSETS_REF             = uid()
+IOS_ASSETS_BUILD           = uid()
+IOS_EMBED_WATCH_BUILD_FILE = uid()   # build file for embedding Watch.app
+
+# watchOS target
+WATCH_TARGET               = uid()
+WATCH_CFG_LIST             = uid()
+WATCH_CFG_DEBUG            = uid()
+WATCH_CFG_RELEASE          = uid()
+WATCH_SOURCES_PHASE        = uid()
+WATCH_RESOURCES_PHASE      = uid()
+WATCH_FRAMEWORKS_PHASE     = uid()
+WATCH_PRODUCT_REF          = uid()
+WATCH_INFO_REF             = uid()
+WATCH_ASSETS_REF           = uid()
+WATCH_ASSETS_BUILD         = uid()
+WATCH_DEPENDENCY           = uid()
+WATCH_CONTAINER_PROXY      = uid()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Source files
+# ─────────────────────────────────────────────────────────────────────────────
+
+def make_src(name, path):
+    return {"name": name, "path": path, "ref": uid(), "build": uid()}
+
+IOS_SRCS = [
+    make_src("App.swift",          "App.swift"),
+    make_src("Models.swift",       "Models/Models.swift"),
+    make_src("Storage.swift",      "Storage/Storage.swift"),
+    make_src("TrackerView.swift",  "Views/TrackerView.swift"),
+    make_src("EditorView.swift",   "Views/EditorView.swift"),
+    make_src("WatchView.swift",    "Views/WatchView.swift"),
+    make_src("Theme.swift",        "Views/Theme.swift"),
 ]
 
-source_entries = []
-for name, path in SOURCES:
-    source_entries.append({
-        "name": name,
-        "path": path,
-        "file_ref_id": new_id(),
-        "build_file_id": new_id(),
-    })
+# Watch gets its own file refs (separate build entries, shared source paths)
+WATCH_SRCS = [
+    make_src("KnitFlowWatchApp.swift", "WatchApp/KnitFlowWatchApp.swift"),
+    make_src("WatchView.swift",        "Views/WatchView.swift"),
+    make_src("Models.swift",           "Models/Models.swift"),
+    make_src("Theme.swift",            "Views/Theme.swift"),
+]
 
-INFO_PLIST_FILE_REF = new_id()
-ASSETS_FILE_REF     = new_id()
-ASSETS_BUILD_FILE   = new_id()
-
-# ── Build the pbxproj content ─────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# pbxproj builder
+# ─────────────────────────────────────────────────────────────────────────────
 
 def pbxproj():
-    lines = []
-    A = lines.append
+    L = []
+    def w(*args): L.append("\t\t" + " ".join(args))
+    def section(name): L.append(f"\n/* Begin {name} section */")
+    def end(name):    L.append(f"/* End {name} section */")
 
-    A("// !$*UTF8*$!")
-    A("{")
-    A("\tarchiveVersion = 1;")
-    A("\tclasses = {")
-    A("\t};")
-    A("\tobjectVersion = 56;")
-    A("\tobjects = {")
-    A("")
+    L.append("// !$*UTF8*$!")
+    L.append("{")
+    L.append("\tarchiveVersion = 1;")
+    L.append("\tclasses = {};")
+    L.append("\tobjectVersion = 56;")
+    L.append("\tobjects = {")
 
-    # ── PBXBuildFile ──────────────────────────────────────────────────────────
-    A("/* Begin PBXBuildFile section */")
-    for s in source_entries:
-        A(f'\t\t{s["build_file_id"]} /* {s["name"]} in Sources */ = {{isa = PBXBuildFile; fileRef = {s["file_ref_id"]} /* {s["name"]} */; }};')
-    A(f'\t\t{ASSETS_BUILD_FILE} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {ASSETS_FILE_REF} /* Assets.xcassets */; }};')
-    A("/* End PBXBuildFile section */")
-    A("")
+    # ── PBXBuildFile ─────────────────────────────────────────────────────────
+    section("PBXBuildFile")
+    for s in IOS_SRCS:
+        w(f'{s["build"]} /* {s["name"]} in Sources */ = {{isa = PBXBuildFile; fileRef = {s["ref"]}; }};')
+    w(f'{IOS_ASSETS_BUILD} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {IOS_ASSETS_REF}; }};')
+    # Embed Watch app in iOS bundle
+    w(f'{IOS_EMBED_WATCH_BUILD_FILE} /* KnitFlow Watch App.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {WATCH_PRODUCT_REF}; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};')
+
+    for s in WATCH_SRCS:
+        w(f'{s["build"]} /* {s["name"]} in Sources */ = {{isa = PBXBuildFile; fileRef = {s["ref"]}; }};')
+    w(f'{WATCH_ASSETS_BUILD} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {WATCH_ASSETS_REF}; }};')
+    end("PBXBuildFile")
+
+    # ── PBXContainerItemProxy ─────────────────────────────────────────────────
+    section("PBXContainerItemProxy")
+    w(f'{WATCH_CONTAINER_PROXY} /* PBXContainerItemProxy */ = {{')
+    w(f'\tisa = PBXContainerItemProxy;')
+    w(f'\tcontainerPortal = {PROJECT_ID} /* Project object */;')
+    w(f'\tproxyType = 1;')
+    w(f'\tremoteGlobalIDString = {WATCH_TARGET};')
+    w(f'\tremoteInfo = "KnitFlow Watch App";')
+    w(f'}};')
+    end("PBXContainerItemProxy")
+
+    # ── PBXCopyFilesBuildPhase (Embed Watch Content) ───────────────────────────
+    section("PBXCopyFilesBuildPhase")
+    w(f'{IOS_EMBED_WATCH_PHASE} /* Embed Watch Content */ = {{')
+    w(f'\tisa = PBXCopyFilesBuildPhase;')
+    w(f'\tbuildActionMask = 2147483647;')
+    w(f'\tdstPath = "$(CONTENTS_FOLDER_PATH)/Watch";')
+    w(f'\tdstSubfolderSpec = 16;')
+    w(f'\tfiles = (')
+    w(f'\t\t{IOS_EMBED_WATCH_BUILD_FILE} /* KnitFlow Watch App.app in Embed Watch Content */,')
+    w(f'\t);')
+    w(f'\tname = "Embed Watch Content";')
+    w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+    w(f'}};')
+    end("PBXCopyFilesBuildPhase")
 
     # ── PBXFileReference ──────────────────────────────────────────────────────
-    A("/* Begin PBXFileReference section */")
-    for s in source_entries:
-        A(f'\t\t{s["file_ref_id"]} /* {s["name"]} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = {s["name"]}; path = {s["path"]}; sourceTree = "<group>"; }};')
-    A(f'\t\t{INFO_PLIST_FILE_REF} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};')
-    A(f'\t\t{ASSETS_FILE_REF} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};')
-    A(f'\t\t{PRODUCT_REF_ID} /* KnitFlow.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KnitFlow.app; sourceTree = BUILT_PRODUCTS_DIR; }};')
-    A("/* End PBXFileReference section */")
-    A("")
+    section("PBXFileReference")
+    for s in IOS_SRCS:
+        w(f'{s["ref"]} /* {s["name"]} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = {s["name"]}; path = {s["path"]}; sourceTree = "<group>"; }};')
+    w(f'{IOS_INFO_REF} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};')
+    w(f'{IOS_ASSETS_REF} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};')
+    w(f'{IOS_PRODUCT_REF} /* KnitFlow.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KnitFlow.app; sourceTree = BUILT_PRODUCTS_DIR; }};')
+
+    for s in WATCH_SRCS:
+        w(f'{s["ref"]} /* {s["name"]} (Watch) */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = {s["name"]}; path = {s["path"]}; sourceTree = "<group>"; }};')
+    w(f'{WATCH_INFO_REF} /* Watch Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = WatchApp/Info.plist; sourceTree = "<group>"; }};')
+    w(f'{WATCH_ASSETS_REF} /* Watch Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WatchApp/Assets.xcassets; sourceTree = "<group>"; }};')
+    w(f'{WATCH_PRODUCT_REF} /* KnitFlow Watch App.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KnitFlow Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; }};')
+    end("PBXFileReference")
 
     # ── PBXFrameworksBuildPhase ───────────────────────────────────────────────
-    A("/* Begin PBXFrameworksBuildPhase section */")
-    A(f'\t\t{FRAMEWORKS_PHASE_ID} /* Frameworks */ = {{')
-    A("\t\t\tisa = PBXFrameworksBuildPhase;")
-    A("\t\t\tbuildActionMask = 2147483647;")
-    A("\t\t\tfiles = (")
-    A("\t\t\t);")
-    A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
-    A("\t\t};")
-    A("/* End PBXFrameworksBuildPhase section */")
-    A("")
+    section("PBXFrameworksBuildPhase")
+    for phase_id, label in [(IOS_FRAMEWORKS_PHASE, "iOS"), (WATCH_FRAMEWORKS_PHASE, "Watch")]:
+        w(f'{phase_id} /* Frameworks ({label}) */ = {{')
+        w(f'\tisa = PBXFrameworksBuildPhase;')
+        w(f'\tbuildActionMask = 2147483647;')
+        w(f'\tfiles = ();')
+        w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+        w(f'}};')
+    end("PBXFrameworksBuildPhase")
 
     # ── PBXGroup ──────────────────────────────────────────────────────────────
-    A("/* Begin PBXGroup section */")
+    section("PBXGroup")
     # Main group
-    A(f'\t\t{MAIN_GROUP_ID} = {{')
-    A("\t\t\tisa = PBXGroup;")
-    A("\t\t\tchildren = (")
-    for s in source_entries:
-        A(f'\t\t\t\t{s["file_ref_id"]} /* {s["name"]} */,')
-    A(f'\t\t\t\t{ASSETS_FILE_REF} /* Assets.xcassets */,')
-    A(f'\t\t\t\t{INFO_PLIST_FILE_REF} /* Info.plist */,')
-    A(f'\t\t\t\t{PRODUCTS_GROUP_ID} /* Products */,')
-    A("\t\t\t);")
-    A("\t\t\tsourceTree = \"<group>\";")
-    A("\t\t};")
+    w(f'{MAIN_GROUP} = {{')
+    w(f'\tisa = PBXGroup;')
+    w(f'\tchildren = (')
+    for s in IOS_SRCS:
+        w(f'\t\t{s["ref"]} /* {s["name"]} */,')
+    for s in WATCH_SRCS:
+        w(f'\t\t{s["ref"]} /* {s["name"]} (Watch) */,')
+    w(f'\t\t{IOS_ASSETS_REF} /* Assets.xcassets */,')
+    w(f'\t\t{IOS_INFO_REF} /* Info.plist */,')
+    w(f'\t\t{WATCH_ASSETS_REF} /* Watch Assets.xcassets */,')
+    w(f'\t\t{WATCH_INFO_REF} /* Watch Info.plist */,')
+    w(f'\t\t{PRODUCTS_GROUP} /* Products */,')
+    w(f'\t);')
+    w(f'\tsourceTree = "<group>";')
+    w(f'}};')
     # Products group
-    A(f'\t\t{PRODUCTS_GROUP_ID} /* Products */ = {{')
-    A("\t\t\tisa = PBXGroup;")
-    A("\t\t\tchildren = (")
-    A(f'\t\t\t\t{PRODUCT_REF_ID} /* KnitFlow.app */,')
-    A("\t\t\t);")
-    A('\t\t\tname = Products;')
-    A("\t\t\tsourceTree = \"<group>\";")
-    A("\t\t};")
-    A("/* End PBXGroup section */")
-    A("")
+    w(f'{PRODUCTS_GROUP} /* Products */ = {{')
+    w(f'\tisa = PBXGroup;')
+    w(f'\tchildren = (')
+    w(f'\t\t{IOS_PRODUCT_REF} /* KnitFlow.app */,')
+    w(f'\t\t{WATCH_PRODUCT_REF} /* KnitFlow Watch App.app */,')
+    w(f'\t);')
+    w(f'\tname = Products;')
+    w(f'\tsourceTree = "<group>";')
+    w(f'}};')
+    end("PBXGroup")
 
     # ── PBXNativeTarget ───────────────────────────────────────────────────────
-    A("/* Begin PBXNativeTarget section */")
-    A(f'\t\t{TARGET_ID} /* KnitFlow */ = {{')
-    A("\t\t\tisa = PBXNativeTarget;")
-    A(f'\t\t\tbuildConfigurationList = {BUILD_CONFIG_LIST_TARGET} /* Build configuration list for PBXNativeTarget "KnitFlow" */;')
-    A("\t\t\tbuildPhases = (")
-    A(f'\t\t\t\t{SOURCES_PHASE_ID} /* Sources */,')
-    A(f'\t\t\t\t{FRAMEWORKS_PHASE_ID} /* Frameworks */,')
-    A(f'\t\t\t\t{RESOURCES_PHASE_ID} /* Resources */,')
-    A("\t\t\t);")
-    A("\t\t\tbuildRules = (")
-    A("\t\t\t);")
-    A("\t\t\tdependencies = (")
-    A("\t\t\t);")
-    A('\t\t\tname = KnitFlow;')
-    A(f'\t\t\tproductName = KnitFlow;')
-    A(f'\t\t\tproductReference = {PRODUCT_REF_ID} /* KnitFlow.app */;')
-    A('\t\t\tproductType = "com.apple.product-type.application";')
-    A("\t\t};")
-    A("/* End PBXNativeTarget section */")
-    A("")
+    section("PBXNativeTarget")
+    # iOS
+    w(f'{IOS_TARGET} /* KnitFlow */ = {{')
+    w(f'\tisa = PBXNativeTarget;')
+    w(f'\tbuildConfigurationList = {IOS_CFG_LIST};')
+    w(f'\tbuildPhases = (')
+    w(f'\t\t{IOS_SOURCES_PHASE} /* Sources */,')
+    w(f'\t\t{IOS_FRAMEWORKS_PHASE} /* Frameworks */,')
+    w(f'\t\t{IOS_RESOURCES_PHASE} /* Resources */,')
+    w(f'\t\t{IOS_EMBED_WATCH_PHASE} /* Embed Watch Content */,')
+    w(f'\t);')
+    w(f'\tbuildRules = ();')
+    w(f'\tdependencies = (')
+    w(f'\t\t{WATCH_DEPENDENCY} /* PBXTargetDependency */,')
+    w(f'\t);')
+    w(f'\tname = KnitFlow;')
+    w(f'\tproductName = KnitFlow;')
+    w(f'\tproductReference = {IOS_PRODUCT_REF} /* KnitFlow.app */;')
+    w(f'\tproductType = "com.apple.product-type.application";')
+    w(f'}};')
+    # Watch
+    w(f'{WATCH_TARGET} /* KnitFlow Watch App */ = {{')
+    w(f'\tisa = PBXNativeTarget;')
+    w(f'\tbuildConfigurationList = {WATCH_CFG_LIST};')
+    w(f'\tbuildPhases = (')
+    w(f'\t\t{WATCH_SOURCES_PHASE} /* Sources */,')
+    w(f'\t\t{WATCH_FRAMEWORKS_PHASE} /* Frameworks */,')
+    w(f'\t\t{WATCH_RESOURCES_PHASE} /* Resources */,')
+    w(f'\t);')
+    w(f'\tbuildRules = ();')
+    w(f'\tdependencies = ();')
+    w(f'\tname = "KnitFlow Watch App";')
+    w(f'\tproductName = "KnitFlow Watch App";')
+    w(f'\tproductReference = {WATCH_PRODUCT_REF} /* KnitFlow Watch App.app */;')
+    w(f'\tproductType = "com.apple.product-type.application";')
+    w(f'}};')
+    end("PBXNativeTarget")
 
     # ── PBXProject ────────────────────────────────────────────────────────────
-    A("/* Begin PBXProject section */")
-    A(f'\t\t{PROJECT_ID} /* Project object */ = {{')
-    A("\t\t\tisa = PBXProject;")
-    A("\t\t\tattributes = {")
-    A('\t\t\t\tBuildIndependentTargetsInParallel = 1;')
-    A('\t\t\t\tLastSwiftUpdateCheck = 1600;')
-    A('\t\t\t\tLastUpgradeCheck = 1600;')
-    A("\t\t\t\tTargetAttributes = {")
-    A(f'\t\t\t\t\t{TARGET_ID} = {{')
-    A('\t\t\t\t\t\tCreatedOnToolsVersion = 16.0;')
-    A("\t\t\t\t\t};")
-    A("\t\t\t\t};")
-    A("\t\t\t};")
-    A(f'\t\t\tbuildConfigurationList = {BUILD_CONFIG_LIST_PROJECT} /* Build configuration list for PBXProject "KnitFlow" */;')
-    A('\t\t\tcompatibilityVersion = "Xcode 14.0";')
-    A('\t\t\tdevelopmentRegion = en;')
-    A('\t\t\thasScannedForEncodings = 0;')
-    A('\t\t\tknownRegions = (')
-    A('\t\t\t\ten,')
-    A('\t\t\t\tBase,')
-    A('\t\t\t);')
-    A(f'\t\t\tmainGroup = {MAIN_GROUP_ID};')
-    A(f'\t\t\tproductRefGroup = {PRODUCTS_GROUP_ID} /* Products */;')
-    A('\t\t\tprojectDirPath = "";')
-    A('\t\t\tprojectRoot = "";')
-    A('\t\t\ttargets = (')
-    A(f'\t\t\t\t{TARGET_ID} /* KnitFlow */,')
-    A('\t\t\t);')
-    A("\t\t};")
-    A("/* End PBXProject section */")
-    A("")
+    section("PBXProject")
+    w(f'{PROJECT_ID} /* Project object */ = {{')
+    w(f'\tisa = PBXProject;')
+    w(f'\tattributes = {{')
+    w(f'\t\tBuildIndependentTargetsInParallel = 1;')
+    w(f'\t\tLastSwiftUpdateCheck = 1600;')
+    w(f'\t\tLastUpgradeCheck = 1600;')
+    w(f'\t\tTargetAttributes = {{')
+    w(f'\t\t\t{IOS_TARGET} = {{ CreatedOnToolsVersion = 16.0; }};')
+    w(f'\t\t\t{WATCH_TARGET} = {{ CreatedOnToolsVersion = 16.0; }};')
+    w(f'\t\t}};')
+    w(f'\t}};')
+    w(f'\tbuildConfigurationList = {PROJECT_CFG_LIST};')
+    w(f'\tcompatibilityVersion = "Xcode 14.0";')
+    w(f'\tdevelopmentRegion = en;')
+    w(f'\thasScannedForEncodings = 0;')
+    w(f'\tknownRegions = (en, Base);')
+    w(f'\tmainGroup = {MAIN_GROUP};')
+    w(f'\tproductRefGroup = {PRODUCTS_GROUP} /* Products */;')
+    w(f'\tprojectDirPath = "";')
+    w(f'\tprojectRoot = "";')
+    w(f'\ttargets = (')
+    w(f'\t\t{IOS_TARGET} /* KnitFlow */,')
+    w(f'\t\t{WATCH_TARGET} /* KnitFlow Watch App */,')
+    w(f'\t);')
+    w(f'}};')
+    end("PBXProject")
 
     # ── PBXResourcesBuildPhase ────────────────────────────────────────────────
-    A("/* Begin PBXResourcesBuildPhase section */")
-    A(f'\t\t{RESOURCES_PHASE_ID} /* Resources */ = {{')
-    A("\t\t\tisa = PBXResourcesBuildPhase;")
-    A("\t\t\tbuildActionMask = 2147483647;")
-    A("\t\t\tfiles = (")
-    A(f'\t\t\t\t{ASSETS_BUILD_FILE} /* Assets.xcassets in Resources */,')
-    A("\t\t\t);")
-    A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
-    A("\t\t};")
-    A("/* End PBXResourcesBuildPhase section */")
-    A("")
+    section("PBXResourcesBuildPhase")
+    w(f'{IOS_RESOURCES_PHASE} /* Resources (iOS) */ = {{')
+    w(f'\tisa = PBXResourcesBuildPhase;')
+    w(f'\tbuildActionMask = 2147483647;')
+    w(f'\tfiles = ({IOS_ASSETS_BUILD} /* Assets.xcassets in Resources */,);')
+    w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+    w(f'}};')
+    w(f'{WATCH_RESOURCES_PHASE} /* Resources (Watch) */ = {{')
+    w(f'\tisa = PBXResourcesBuildPhase;')
+    w(f'\tbuildActionMask = 2147483647;')
+    w(f'\tfiles = ({WATCH_ASSETS_BUILD} /* Assets.xcassets in Resources */,);')
+    w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+    w(f'}};')
+    end("PBXResourcesBuildPhase")
 
     # ── PBXSourcesBuildPhase ──────────────────────────────────────────────────
-    A("/* Begin PBXSourcesBuildPhase section */")
-    A(f'\t\t{SOURCES_PHASE_ID} /* Sources */ = {{')
-    A("\t\t\tisa = PBXSourcesBuildPhase;")
-    A("\t\t\tbuildActionMask = 2147483647;")
-    A("\t\t\tfiles = (")
-    for s in source_entries:
-        A(f'\t\t\t\t{s["build_file_id"]} /* {s["name"]} in Sources */,')
-    A("\t\t\t);")
-    A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
-    A("\t\t};")
-    A("/* End PBXSourcesBuildPhase section */")
-    A("")
+    section("PBXSourcesBuildPhase")
+    w(f'{IOS_SOURCES_PHASE} /* Sources (iOS) */ = {{')
+    w(f'\tisa = PBXSourcesBuildPhase;')
+    w(f'\tbuildActionMask = 2147483647;')
+    w(f'\tfiles = (')
+    for s in IOS_SRCS:
+        w(f'\t\t{s["build"]} /* {s["name"]} in Sources */,')
+    w(f'\t);')
+    w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+    w(f'}};')
+    w(f'{WATCH_SOURCES_PHASE} /* Sources (Watch) */ = {{')
+    w(f'\tisa = PBXSourcesBuildPhase;')
+    w(f'\tbuildActionMask = 2147483647;')
+    w(f'\tfiles = (')
+    for s in WATCH_SRCS:
+        w(f'\t\t{s["build"]} /* {s["name"]} in Sources */,')
+    w(f'\t);')
+    w(f'\trunOnlyForDeploymentPostprocessing = 0;')
+    w(f'}};')
+    end("PBXSourcesBuildPhase")
+
+    # ── PBXTargetDependency ───────────────────────────────────────────────────
+    section("PBXTargetDependency")
+    w(f'{WATCH_DEPENDENCY} /* PBXTargetDependency */ = {{')
+    w(f'\tisa = PBXTargetDependency;')
+    w(f'\ttarget = {WATCH_TARGET} /* KnitFlow Watch App */;')
+    w(f'\ttargetProxy = {WATCH_CONTAINER_PROXY} /* PBXContainerItemProxy */;')
+    w(f'}};')
+    end("PBXTargetDependency")
 
     # ── XCBuildConfiguration ──────────────────────────────────────────────────
-    common_settings = textwrap.dedent("""\
-        ALWAYS_SEARCH_USER_PATHS = NO;
-        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-        CLANG_ANALYZER_NONNULL = YES;
-        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-        CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-        CLANG_ENABLE_MODULES = YES;
-        CLANG_ENABLE_OBJC_ARC = YES;
-        CLANG_ENABLE_OBJC_WEAK = YES;
-        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-        CLANG_WARN_BOOL_CONVERSION = YES;
-        CLANG_WARN_COMMA = YES;
-        CLANG_WARN_CONSTANT_CONVERSION = YES;
-        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-        CLANG_WARN_EMPTY_BODY = YES;
-        CLANG_WARN_ENUM_CONVERSION = YES;
-        CLANG_WARN_INFINITE_RECURSION = YES;
-        CLANG_WARN_INT_CONVERSION = YES;
-        CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-        CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-        CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-        CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-        CLANG_WARN_STRICT_PROTOTYPES = YES;
-        CLANG_WARN_SUSPICIOUS_MOVE = YES;
-        CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-        CLANG_WARN_UNREACHABLE_CODE = YES;
-        CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-        COPY_PHASE_STRIP = NO;
-        ENABLE_STRICT_OBJC_MSGSEND = YES;
-        ENABLE_USER_SCRIPT_SANDBOXING = YES;
-        GCC_C_LANGUAGE_STANDARD = gnu17;
-        GCC_NO_COMMON_BLOCKS = YES;
-        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-        GCC_WARN_UNDECLARED_SELECTOR = YES;
-        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-        GCC_WARN_UNUSED_FUNCTION = YES;
-        GCC_WARN_UNUSED_VARIABLE = YES;
-        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-        LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-        MTL_FAST_MATH = YES;
-        SDKROOT = iphoneos;
-        SWIFT_EMIT_LOC_STRINGS = YES;""")
+    section("XCBuildConfiguration")
 
-    A("/* Begin XCBuildConfiguration section */")
+    # Shared project-level settings
+    proj_common = {
+        "ALWAYS_SEARCH_USER_PATHS": "NO",
+        "CLANG_ANALYZER_NONNULL": "YES",
+        "CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION": "YES_AGGRESSIVE",
+        "CLANG_CXX_LANGUAGE_STANDARD": '"gnu++20"',
+        "CLANG_ENABLE_MODULES": "YES",
+        "CLANG_ENABLE_OBJC_ARC": "YES",
+        "CLANG_ENABLE_OBJC_WEAK": "YES",
+        "CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING": "YES",
+        "CLANG_WARN_BOOL_CONVERSION": "YES",
+        "CLANG_WARN_COMMA": "YES",
+        "CLANG_WARN_CONSTANT_CONVERSION": "YES",
+        "CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS": "YES",
+        "CLANG_WARN_DIRECT_OBJC_ISA_USAGE": "YES_ERROR",
+        "CLANG_WARN_DOCUMENTATION_COMMENTS": "YES",
+        "CLANG_WARN_EMPTY_BODY": "YES",
+        "CLANG_WARN_ENUM_CONVERSION": "YES",
+        "CLANG_WARN_INFINITE_RECURSION": "YES",
+        "CLANG_WARN_INT_CONVERSION": "YES",
+        "CLANG_WARN_NON_LITERAL_NULL_CONVERSION": "YES",
+        "CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF": "YES",
+        "CLANG_WARN_OBJC_LITERAL_CONVERSION": "YES",
+        "CLANG_WARN_OBJC_ROOT_CLASS": "YES_ERROR",
+        "CLANG_WARN_RANGE_LOOP_ANALYSIS": "YES",
+        "CLANG_WARN_SUSPICIOUS_MOVE": "YES",
+        "CLANG_WARN_UNGUARDED_AVAILABILITY": "YES_AGGRESSIVE",
+        "CLANG_WARN_UNREACHABLE_CODE": "YES",
+        "CLANG_WARN__DUPLICATE_METHOD_MATCH": "YES",
+        "COPY_PHASE_STRIP": "NO",
+        "ENABLE_STRICT_OBJC_MSGSEND": "YES",
+        "GCC_C_LANGUAGE_STANDARD": "gnu17",
+        "GCC_NO_COMMON_BLOCKS": "YES",
+        "GCC_WARN_64_TO_32_BIT_CONVERSION": "YES",
+        "GCC_WARN_ABOUT_RETURN_TYPE": "YES_ERROR",
+        "GCC_WARN_UNDECLARED_SELECTOR": "YES",
+        "GCC_WARN_UNINITIALIZED_AUTOS": "YES_AGGRESSIVE",
+        "GCC_WARN_UNUSED_FUNCTION": "YES",
+        "GCC_WARN_UNUSED_VARIABLE": "YES",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+    }
+
+    def write_config(cfg_id, name, settings):
+        w(f'{cfg_id} /* {name} */ = {{')
+        w(f'\tisa = XCBuildConfiguration;')
+        w(f'\tbuildSettings = {{')
+        for k, v in settings.items():
+            w(f'\t\t{k} = {v};')
+        w(f'\t}};')
+        w(f'\tname = {name};')
+        w(f'}};')
 
     # Project Debug
-    A(f'\t\t{CONFIG_DEBUG_PROJECT} /* Debug */ = {{')
-    A("\t\t\tisa = XCBuildConfiguration;")
-    A("\t\t\tbuildSettings = {")
-    for line in common_settings.splitlines():
-        A(f'\t\t\t\t{line}')
-    A('\t\t\t\tDEBUG_INFORMATION_FORMAT = dwarf;')
-    A('\t\t\t\tENABLE_TESTABILITY = YES;')
-    A('\t\t\t\tGCC_DYNAMIC_NO_PIC = NO;')
-    A('\t\t\t\tGCC_OPTIMIZATION_LEVEL = 0;')
-    A('\t\t\t\tGCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");')
-    A('\t\t\t\tSWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;')
-    A('\t\t\t\tSWIFT_OPTIMIZATION_LEVEL = "-Onone";')
-    A('\t\t\t\tSIMULATOR_DEPLOYMENT_TARGET = 17.0;')
-    A("\t\t\t};")
-    A('\t\t\tname = Debug;')
-    A("\t\t};")
+    debug_proj = dict(proj_common)
+    debug_proj.update({
+        "DEBUG_INFORMATION_FORMAT": "dwarf",
+        "ENABLE_TESTABILITY": "YES",
+        "GCC_DYNAMIC_NO_PIC": "NO",
+        "GCC_OPTIMIZATION_LEVEL": "0",
+        'GCC_PREPROCESSOR_DEFINITIONS': '("DEBUG=1", "$(inherited)")',
+        "MTL_ENABLE_DEBUG_INFO": "INCLUDE_SOURCE",
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG",
+        "SWIFT_OPTIMIZATION_LEVEL": '"-Onone"',
+    })
+    write_config(PROJECT_CFG_DEBUG, "Debug", debug_proj)
 
-    # Project Release
-    A(f'\t\t{CONFIG_RELEASE_PROJECT} /* Release */ = {{')
-    A("\t\t\tisa = XCBuildConfiguration;")
-    A("\t\t\tbuildSettings = {")
-    for line in common_settings.splitlines():
-        A(f'\t\t\t\t{line}')
-    A('\t\t\t\tDEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";')
-    A('\t\t\t\tENABLE_NS_ASSERTIONS = NO;')
-    A('\t\t\t\tSWIFT_COMPILATION_MODE = wholemodule;')
-    A('\t\t\t\tSWIFT_OPTIMIZATION_LEVEL = "-O";')
-    A('\t\t\t\tVALIDATE_PRODUCT = YES;')
-    A("\t\t\t};")
-    A('\t\t\tname = Release;')
-    A("\t\t};")
+    release_proj = dict(proj_common)
+    release_proj.update({
+        "DEBUG_INFORMATION_FORMAT": '"dwarf-with-dsym"',
+        "ENABLE_NS_ASSERTIONS": "NO",
+        "MTL_FAST_MATH": "YES",
+        "SWIFT_COMPILATION_MODE": "wholemodule",
+        "SWIFT_OPTIMIZATION_LEVEL": '"-O"',
+        "VALIDATE_PRODUCT": "YES",
+    })
+    write_config(PROJECT_CFG_RELEASE, "Release", release_proj)
 
-    target_settings = textwrap.dedent("""\
-        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-        CODE_SIGN_STYLE = Automatic;
-        CURRENT_PROJECT_VERSION = 1;
-        GENERATE_INFOPLIST_FILE = NO;
-        INFOPLIST_FILE = Info.plist;
-        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-        LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
-        MARKETING_VERSION = 1.0;
-        PRODUCT_BUNDLE_IDENTIFIER = com.knitflow.app;
-        PRODUCT_NAME = "$(TARGET_NAME)";
-        SDKROOT = iphoneos;
-        SWIFT_EMIT_LOC_STRINGS = YES;
-        SWIFT_VERSION = 5.0;
-        TARGETED_DEVICE_FAMILY = "1,2";""")
+    # iOS target settings
+    ios_common = {
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+        "CODE_SIGN_STYLE": "Automatic",
+        "CURRENT_PROJECT_VERSION": "1",
+        "GENERATE_INFOPLIST_FILE": "NO",
+        "INFOPLIST_FILE": "Info.plist",
+        "IPHONEOS_DEPLOYMENT_TARGET": "17.0",
+        "LD_RUNPATH_SEARCH_PATHS": '("$(inherited)", "@executable_path/Frameworks")',
+        "MARKETING_VERSION": "1.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.knitflow.app",
+        "PRODUCT_NAME": '"$(TARGET_NAME)"',
+        "SDKROOT": "iphoneos",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": '"1,2"',
+    }
+    write_config(IOS_CFG_DEBUG,   "Debug",   ios_common)
+    write_config(IOS_CFG_RELEASE, "Release", ios_common)
 
-    # Target Debug
-    A(f'\t\t{CONFIG_DEBUG_TARGET} /* Debug */ = {{')
-    A("\t\t\tisa = XCBuildConfiguration;")
-    A("\t\t\tbuildSettings = {")
-    for line in target_settings.splitlines():
-        A(f'\t\t\t\t{line}')
-    A("\t\t\t};")
-    A('\t\t\tname = Debug;')
-    A("\t\t};")
+    # watchOS target settings
+    watch_common = {
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+        "CODE_SIGN_STYLE": "Automatic",
+        "CURRENT_PROJECT_VERSION": "1",
+        "GENERATE_INFOPLIST_FILE": "NO",
+        "INFOPLIST_FILE": "WatchApp/Info.plist",
+        "LD_RUNPATH_SEARCH_PATHS": '("$(inherited)", "@executable_path/Frameworks")',
+        "MARKETING_VERSION": "1.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.knitflow.app.watchkitapp",
+        "PRODUCT_NAME": '"$(TARGET_NAME)"',
+        "SDKROOT": "watchos",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": '"4"',
+        "WATCHOS_DEPLOYMENT_TARGET": "10.0",
+    }
+    write_config(WATCH_CFG_DEBUG,   "Debug",   watch_common)
+    write_config(WATCH_CFG_RELEASE, "Release", watch_common)
 
-    # Target Release
-    A(f'\t\t{CONFIG_RELEASE_TARGET} /* Release */ = {{')
-    A("\t\t\tisa = XCBuildConfiguration;")
-    A("\t\t\tbuildSettings = {")
-    for line in target_settings.splitlines():
-        A(f'\t\t\t\t{line}')
-    A("\t\t\t};")
-    A('\t\t\tname = Release;')
-    A("\t\t};")
-
-    A("/* End XCBuildConfiguration section */")
-    A("")
+    end("XCBuildConfiguration")
 
     # ── XCConfigurationList ───────────────────────────────────────────────────
-    A("/* Begin XCConfigurationList section */")
-    A(f'\t\t{BUILD_CONFIG_LIST_PROJECT} /* Build configuration list for PBXProject "KnitFlow" */ = {{')
-    A("\t\t\tisa = XCConfigurationList;")
-    A("\t\t\tbuildConfigurations = (")
-    A(f'\t\t\t\t{CONFIG_DEBUG_PROJECT} /* Debug */,')
-    A(f'\t\t\t\t{CONFIG_RELEASE_PROJECT} /* Release */,')
-    A("\t\t\t);")
-    A('\t\t\tdefaultConfigurationIsVisible = 0;')
-    A('\t\t\tdefaultConfigurationName = Release;')
-    A("\t\t};")
+    section("XCConfigurationList")
+    def write_cfg_list(list_id, owner, debug_id, release_id):
+        w(f'{list_id} /* Build configuration list for {owner} */ = {{')
+        w(f'\tisa = XCConfigurationList;')
+        w(f'\tbuildConfigurations = ({debug_id} /* Debug */, {release_id} /* Release */,);')
+        w(f'\tdefaultConfigurationIsVisible = 0;')
+        w(f'\tdefaultConfigurationName = Release;')
+        w(f'}};')
 
-    A(f'\t\t{BUILD_CONFIG_LIST_TARGET} /* Build configuration list for PBXNativeTarget "KnitFlow" */ = {{')
-    A("\t\t\tisa = XCConfigurationList;")
-    A("\t\t\tbuildConfigurations = (")
-    A(f'\t\t\t\t{CONFIG_DEBUG_TARGET} /* Debug */,')
-    A(f'\t\t\t\t{CONFIG_RELEASE_TARGET} /* Release */,')
-    A("\t\t\t);")
-    A('\t\t\tdefaultConfigurationIsVisible = 0;')
-    A('\t\t\tdefaultConfigurationName = Release;')
-    A("\t\t};")
-    A("/* End XCConfigurationList section */")
-    A("")
+    write_cfg_list(PROJECT_CFG_LIST, 'PBXProject "KnitFlow"',           PROJECT_CFG_DEBUG,  PROJECT_CFG_RELEASE)
+    write_cfg_list(IOS_CFG_LIST,     'PBXNativeTarget "KnitFlow"',       IOS_CFG_DEBUG,      IOS_CFG_RELEASE)
+    write_cfg_list(WATCH_CFG_LIST,   'PBXNativeTarget "KnitFlow Watch App"', WATCH_CFG_DEBUG, WATCH_CFG_RELEASE)
+    end("XCConfigurationList")
 
-    A("\t};")
-    A(f'\trootObject = {PROJECT_ID} /* Project object */;')
-    A("}")
-    return "\n".join(lines)
+    L.append("\t};")
+    L.append(f"\trootObject = {PROJECT_ID} /* Project object */;")
+    L.append("}")
+    return "\n".join(L)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Info.plist (iOS)
+# ─────────────────────────────────────────────────────────────────────────────
 
-# ── Info.plist ────────────────────────────────────────────────────────────────
-
-INFO_PLIST = """\
+IOS_INFO_PLIST = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -396,9 +488,7 @@ INFO_PLIST = """\
     <key>UILaunchScreen</key>
     <dict/>
     <key>UIRequiredDeviceCapabilities</key>
-    <array>
-        <string>armv7</string>
-    </array>
+    <array><string>armv7</string></array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -416,47 +506,39 @@ INFO_PLIST = """\
 </plist>
 """
 
-# ── Assets.xcassets stubs ─────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Write files
+# ─────────────────────────────────────────────────────────────────────────────
 
-ASSETS_CONTENTS = '{"info":{"author":"xcode","version":1}}'
-ACCENT_CONTENTS = '{"colors":[{"color":{"colorSpace":"sRGB","components":{"alpha":"1.000","blue":"0.600","green":"0.400","red":"0.800"}},"idiom":"universal"}],"info":{"author":"xcode","version":1}}'
-APPICON_CONTENTS = '{"images":[{"idiom":"universal","platform":"ios","size":"1024x1024"}],"info":{"author":"xcode","version":1}}'
+PROJ_DIR  = os.path.join(BASE, "KnitFlow.xcodeproj")
+PBXPROJ   = os.path.join(PROJ_DIR, "project.pbxproj")
+WORKSPACE = os.path.join(PROJ_DIR, "project.xcworkspace")
 
-# ── Write everything ──────────────────────────────────────────────────────────
+os.makedirs(PROJ_DIR, exist_ok=True)
+os.makedirs(WORKSPACE, exist_ok=True)
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-PROJ = os.path.join(BASE, "KnitFlow.xcodeproj")
-PBXPROJ = os.path.join(PROJ, "project.pbxproj")
-
-os.makedirs(PROJ, exist_ok=True)
-
-# project.pbxproj
 with open(PBXPROJ, "w") as f:
     f.write(pbxproj())
-print(f"✅  Wrote {PBXPROJ}")
+print(f"✅  {PBXPROJ}")
 
-# Info.plist
-plist_path = os.path.join(BASE, "Info.plist")
-with open(plist_path, "w") as f:
-    f.write(INFO_PLIST)
-print(f"✅  Wrote {plist_path}")
+with open(os.path.join(WORKSPACE, "contents.xcworkspacedata"), "w") as f:
+    f.write('<?xml version="1.0" encoding="UTF-8"?>\n<Workspace version = "1.0">\n   <FileRef location = "self:"></FileRef>\n</Workspace>\n')
+print(f"✅  xcworkspace")
 
-# Assets.xcassets
-assets_dir = os.path.join(BASE, "Assets.xcassets")
-accent_dir = os.path.join(assets_dir, "AccentColor.colorset")
-icon_dir   = os.path.join(assets_dir, "AppIcon.appiconset")
-os.makedirs(accent_dir, exist_ok=True)
-os.makedirs(icon_dir, exist_ok=True)
+with open(os.path.join(BASE, "Info.plist"), "w") as f:
+    f.write(IOS_INFO_PLIST)
+print(f"✅  Info.plist (iOS)")
 
-with open(os.path.join(assets_dir, "Contents.json"), "w") as f:
-    f.write(ASSETS_CONTENTS)
-with open(os.path.join(accent_dir, "Contents.json"), "w") as f:
-    f.write(ACCENT_CONTENTS)
-with open(os.path.join(icon_dir, "Contents.json"), "w") as f:
-    f.write(APPICON_CONTENTS)
-print(f"✅  Wrote Assets.xcassets")
+# iOS assets
+for d in ["Assets.xcassets", "Assets.xcassets/AccentColor.colorset", "Assets.xcassets/AppIcon.appiconset"]:
+    os.makedirs(os.path.join(BASE, d), exist_ok=True)
+with open(os.path.join(BASE, "Assets.xcassets/Contents.json"), "w") as f:
+    f.write('{"info":{"author":"xcode","version":1}}')
 
 print()
-print("🚀  Done! Now run:")
-print(f"    open {PROJ}")
-print("    Then press ⌘R to build & run on the simulator.")
+print("🚀  Done! Run:")
+print(f"    open {PROJ_DIR}")
+print()
+print("    iPhone:  select 'KnitFlow' scheme → pick an iPhone sim → ⌘R")
+print("    Watch:   select 'KnitFlow Watch App' scheme → pick a Watch sim → ⌘R")
+print("             (The Watch sim must be paired with the iPhone sim)")

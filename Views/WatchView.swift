@@ -84,8 +84,10 @@ struct WatchContentView: View {
     }
 }
 
-// MARK: - Apple Watch Bezel Simulator
+// MARK: - Apple Watch Bezel Simulator (iOS / macOS only)
 /// Renders an interactive Apple Watch bezel wrapper on macOS/iOS for MVP testing.
+/// Excluded from the watchOS target — UIKit-backed Color initialisers are iOS-only.
+#if !os(watchOS)
 struct WatchSimulator: View {
     @Bindable var project: Project
     
@@ -127,3 +129,4 @@ struct WatchSimulator: View {
         )
     }
 }
+#endif
