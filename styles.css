@@ -342,14 +342,17 @@ textarea:focus {
     background-color: var(--bg-cream);
 }
 
-/* Active Row Highlight styles */
+/* Active Row Highlight styles (continuous glowing horizontal ribbon) */
 .stitch-cell.active-row-cell:not(.spacer-cell) {
-    background-color: rgba(185, 82, 60, 0.25);
-    border: 1px solid var(--primary-terracotta);
+    background-color: rgba(185, 82, 60, 0.08);
+    border-top: 2px solid var(--primary-terracotta);
+    border-bottom: 2px solid var(--primary-terracotta);
+    border-left: none;
+    border-right: none;
 }
 
 .stitch-cell.active-row-cell:not(.spacer-cell):hover {
-    background-color: rgba(185, 82, 60, 0.35);
+    background-color: rgba(185, 82, 60, 0.15);
 }
 
 /* Custom visual chart symbols (Knit, Purl, etc.) */

@@ -50,19 +50,16 @@ function compilePattern() {
     let totalRows = 103;
     let parsedGrid = [];
 
-    // 1. Read configuration parameters
+    // 1. Read configuration parameters dynamically
     lines.forEach(line => {
         if (line.startsWith("cast on:")) {
             castOn = parseInt(line.replace("cast on:", "").trim()) || 126;
-        } else if (line.includes("rows") && line.includes("repeat")) {
-            // Find repeat limits (e.g. Rows 26-103: Repeat 25)
-            const parts = line.split(":");
-            if (parts.length > 0) {
-                const range = parts[0].replace("rows", "").trim().split("-");
-                if (range.length === 2) {
-                    totalRows = Math.max(totalRows, parseInt(range[1]) || 103);
-                }
-            }
+        }
+        
+        // Dynamically find the maximum row boundary mentioned in the text (e.g., Rows 103-120)
+        const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+        if (rangeMatch) {
+            totalRows = Math.max(totalRows, parseInt(rangeMatch[2]));
         }
     });
 
@@ -78,11 +75,10 @@ function compilePattern() {
     lines.forEach(line => {
         // --- A. 1x1 Ribbing (Rows 1-24: 1x1 Rib) ---
         if (line.includes("1x1 rib")) {
-            const rangePart = line.split(":")[0];
-            const range = rangePart.replace("rows", "").trim().split("-").map(Number);
-            if (range.length === 2) {
-                const startRow = range[0];
-                const endRow = range[1];
+            const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+            if (rangeMatch) {
+                const startRow = parseInt(rangeMatch[1]);
+                const endRow = parseInt(rangeMatch[2]);
                 for (let r = startRow - 1; r < endRow; r++) {
                     for (let c = 0; c < castOn; c++) {
                         // Alternate Knit (|) and Purl (-)
@@ -93,7 +89,6 @@ function compilePattern() {
         }
         
         // --- B. Row 25 Setup & Increase Row ---
-        // Format: Row 25: A:25, B:11, C:17, D:21 (inc 1), C:17, B:11, A:25
         else if (line.startsWith("row 25:")) {
             const sectionsText = line.replace("row 25:", "").trim();
             const sections = sectionsText.split(",").map(s => s.trim());
@@ -104,27 +99,21 @@ function compilePattern() {
                 const parts = sec.split(":");
                 if (parts.length === 2) {
                     const patternName = parts[0].trim();
-                    const count = parseInt(parts[1].replace(/\(.*\)/, "").trim()); // Get count (e.g. 21)
+                    const count = parseInt(parts[1].replace(/\(.*\)/, "").trim());
                     
                     let segment = [];
                     if (patternName === "a") {
-                        // Pattern A: Stockinette (All Knits)
                         segment = Array(count).fill("|");
                     } else if (patternName === "b") {
-                        // Pattern B: Moss/Seed Stitch (Alternate Purl-Knit)
                         for (let i = 0; i < count; i++) {
                             segment.push(i % 2 === 0 ? "-" : "|");
                         }
                     } else if (patternName === "c") {
-                        // Pattern C: Ribbing (2x2 rib style)
                         for (let i = 0; i < count; i++) {
                             segment.push((i % 4 < 2) ? "|" : "-");
                         }
                     } else if (patternName === "d") {
-                        // Pattern D: Central Cable pattern with +1 increase (total 21 sts)
-                        // Symbol structure uses yarn overs and decreases
                         segment = ["|", "|", "-", "-", "|", "|", "\\", "\\", "o", "|", "o", "/", "/", "|", "|", "-", "-", "|", "|"];
-                        // Pad to count (21)
                         while (segment.length < count) {
                             segment.push(segment.length % 2 === 0 ? "|" : "-");
                         }
@@ -132,33 +121,52 @@ function compilePattern() {
                     row25Stitches = row25Stitches.concat(segment);
                 }
             });
-            
-            // Assign Row 25 stitches. This row width is 127 sts!
             parsedGrid[24] = row25Stitches;
         }
         
         // --- C. Repeat Setup (Rows 26-103: Repeat 25) ---
         else if (line.includes("repeat 25")) {
-            const rangePart = line.split(":")[0];
-            const range = rangePart.replace("rows", "").trim().split("-").map(Number);
-            if (range.length === 2) {
-                const startRow = range[0];
-                const endRow = range[1];
-                
-                // Copy Row 25 array into all repeating rows
+            const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+            if (rangeMatch) {
+                const startRow = parseInt(rangeMatch[1]);
+                const endRow = parseInt(rangeMatch[2]);
                 const row25Data = [...parsedGrid[24]];
                 for (let r = startRow - 1; r < endRow; r++) {
                     parsedGrid[r] = [...row25Data];
                 }
             }
         }
+
+        // --- D. Dynamic Shaping Increases (Rows 103-120: st st inc 1 at the end of each row) ---
+        else if (line.includes("inc 1") && line.includes("end of each row")) {
+            const rangeMatch = line.match(/rows (\d+)-(\d+)/);
+            if (rangeMatch) {
+                const startRow = parseInt(rangeMatch[1]);
+                const endRow = parseInt(rangeMatch[2]);
+                
+                // Base width on the row prior to startRow (e.g. Row 102 width = 127)
+                let currentWidth = parsedGrid[startRow - 2] ? parsedGrid[startRow - 2].filter(s => s !== "").length : castOn;
+                
+                for (let r = startRow - 1; r < endRow; r++) {
+                    currentWidth += 1;
+                    
+                    // Populate row with stockinette (All Knits)
+                    let rowStitches = Array(currentWidth).fill("|");
+                    
+                    // Mark the increase point at the end of the row with a Yarn Over symbol
+                    rowStitches[currentWidth - 1] = "o"; 
+                    
+                    parsedGrid[r] = rowStitches;
+                }
+            }
+        }
     });
 
-    // --- D. Pad Shorter Rows to Max Width to Prevent Layout Shifting ---
+    // --- E. Pad Shorter Rows to Max Width to Prevent Layout Shifting ---
     const maxCols = Math.max(...parsedGrid.map(row => row.length));
     for (let r = 0; r < totalRows; r++) {
         while (parsedGrid[r].length < maxCols) {
-            parsedGrid[r].push(""); // Pad with blank stitch
+            parsedGrid[r].push("");
         }
     }
 
