@@ -209,7 +209,8 @@ function renderGrid() {
             }
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
-            cell.innerText = symbol;
+            // Render purls as blank cells for clean visual display
+            cell.innerText = symbol === "-" ? "" : symbol;
             
             // Set hover tooltip showing coordinates (Right-to-Left stitch numbering)
             if (symbol !== "") {
