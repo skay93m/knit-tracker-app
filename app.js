@@ -151,6 +151,14 @@ function compilePattern() {
         }
     });
 
+    // --- D. Pad Shorter Rows to Max Width to Prevent Layout Shifting ---
+    const maxCols = Math.max(...parsedGrid.map(row => row.length));
+    for (let r = 0; r < totalRows; r++) {
+        while (parsedGrid[r].length < maxCols) {
+            parsedGrid[r].push(""); // Pad with blank stitch
+        }
+    }
+
     appState.gridData = parsedGrid;
     saveToLocalStorage();
     renderGrid();
