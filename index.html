@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnitFlow - Interactive Knitting Chart Compiler</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- LEFT PANEL: WRITTEN PATTERN & CONTROLS -->
+        <aside class="sidebar">
+            <header class="app-header">
+                <div class="logo">🧶 KnitFlow</div>
+                <p class="subtitle">Interactive Chart Compiler</p>
+            </header>
+
+            <div class="card font-selector">
+                <h3>1. Written Instructions</h3>
+                <textarea id="pattern-input" placeholder="Type pattern here...">Cast On: 126
+Rows 1-24: 1x1 Rib
+Row 25: A:25, B:11, C:17, D:21 (inc 1), C:17, B:11, A:25
+Rows 26-103: Repeat 25</textarea>
+                <button id="compile-btn" class="btn primary-btn">Compile Pattern to Chart</button>
+            </div>
+
+            <div class="card active-tracker">
+                <h3>2. Active Row Tracker</h3>
+                <div class="row-status">
+                    <span class="label">KNITTING</span>
+                    <span id="active-row-num" class="row-value">1</span>
+                    <span id="row-progress" class="progress-pct">Row 1 of 103</span>
+                </div>
+                <div class="tracker-actions">
+                    <button id="undo-btn" class="btn secondary-btn" disabled>Undo Row (-1)</button>
+                    <button id="next-btn" class="btn primary-btn success-btn">Complete Row</button>
+                </div>
+            </div>
+
+            <div class="card legend">
+                <h3>3. Symbol Key</h3>
+                <div class="legend-grid">
+                    <div class="legend-item"><span class="stitch-cell font-symbol">|</span> <span>Knit</span></div>
+                    <div class="legend-item"><span class="stitch-cell font-symbol">-</span> <span>Purl</span></div>
+                    <div class="legend-item"><span class="stitch-cell font-symbol">o</span> <span>Yarn Over (YO)</span></div>
+                    <div class="legend-item"><span class="stitch-cell font-symbol">/</span> <span>K2Tog (Right Dec)</span></div>
+                    <div class="legend-item"><span class="stitch-cell font-symbol">\</span> <span>SSK (Left Dec)</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT PANEL: INTERACTIVE GRID CANVAS -->
+        <main class="main-canvas">
+            <div class="canvas-header">
+                <h2>Knitting Chart Canvas</h2>
+                <div class="canvas-actions">
+                    <button id="clear-btn" class="btn text-btn">Clear Stash</button>
+                    <button id="zoom-in" class="btn icon-btn">+</button>
+                    <button id="zoom-out" class="btn icon-btn">-</button>
+                </div>
+            </div>
+            <div class="grid-viewport" id="grid-viewport">
+                <!-- The 2D Grid will be injected here dynamically by JS -->
+                <div id="knitting-chart-grid" class="knitting-grid"></div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
