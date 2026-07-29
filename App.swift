@@ -6,6 +6,37 @@ struct KnitFlowApp: App {
 
     init() {
         let loaded = StorageManager.shared.load()
+
+        // Bootstrap Poyeng's Cable Scarf on first launch
+        if loaded.projects.isEmpty {
+            // Row 1,3,7,9  = [K1,P1]x4, K1, P2, K6, P2, [K1,P1]x4, K1
+            let oddSymbols: [String]  = ["|","-","|","-","|","-","|","-","|","-","-","|","|","|","|","|","|","-","-","|","-","|","-","|","-","|","-","|"]
+            // Row 2,4,6,8,10 = K1,[P8],K2,P6,K2,[P8],K1
+            let evenSymbols: [String] = ["|","-","-","-","-","-","-","-","-","|","|","-","-","-","-","-","-","|","|","-","-","-","-","-","-","-","-","|"]
+            // Row 5 (RS cable row) = [K1,P1]x4, K1, P2, 3/3LC, P2, [K1,P1]x4, K1
+            let cableSymbols: [String] = ["|","-","|","-","|","-","|","-","|","-","-","c3l","span","span","span","span","span","-","-","|","-","|","-","|","-","|","-","|"]
+
+            var patterns: [RowPattern] = []
+            // Build 10-row repeat × 10 = 100 rows
+            for rep in 0..<10 {
+                let base = rep * 10
+                for row in [1, 3, 7, 9] { patterns.append(RowPattern(rowNumber: base + row, symbols: oddSymbols)) }
+                for row in [2, 4, 6, 8, 10] { patterns.append(RowPattern(rowNumber: base + row, symbols: evenSymbols)) }
+                patterns.append(RowPattern(rowNumber: base + 5, symbols: cableSymbols))
+            }
+
+            let scarf = Project(
+                name: "Poyeng's Cable Scarf",
+                targetRows: 100,
+                needleSize: "4mm (US 6)",
+                patternNotes: "Cast on 28 sts. 10-row repeat. Row 5 (RS): 3/3 Left Cable. Repeat until desired length, then bind off. Pattern by Ajeng Sitoresmi.",
+                rowPatterns: patterns
+            )
+            loaded.projects.append(scarf)
+            loaded.activeProjectID = scarf.id
+            StorageManager.shared.save(state: loaded)
+        }
+
         _state = State(initialValue: loaded)
     }
 
