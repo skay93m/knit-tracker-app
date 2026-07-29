@@ -1,85 +1,64 @@
 import SwiftUI
 
 // MARK: - watchOS Content View
-/// The actual UI that runs on the Apple Watch.
-/// It uses high contrast, large tap targets, and vertical layouts for tiny screens.
 struct WatchContentView: View {
     @Bindable var project: Project
-    
+
     var body: some View {
-        VStack(spacing: 8) {
-            // Header
-            Text(project.name)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.orange)
+        VStack(spacing: 12) {
+
+            Spacer()
+
+            // ── Row number ────────────────────────────────────────────────
+            Text("\(project.currentRow)")
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .minimumScaleFactor(0.5)
                 .lineLimit(1)
-            
-            // 1. Giant Row Counter Button (Upper Half)
-            Button(action: {
-                if project.currentRow < project.targetRows {
-                    project.currentRow += 1
+
+            Text("of \(project.targetRows)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.5))
+
+            Spacer()
+
+            // ── + / − buttons ─────────────────────────────────────────────
+            HStack(spacing: 10) {
+                // Minus
+                Button(action: {
+                    if project.currentRow > 0 { project.currentRow -= 1 }
+                }) {
+                    Text("−")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(project.currentRow > 0 ? .white : .white.opacity(0.25))
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white.opacity(0.12))
+                        )
                 }
-            }) {
-                VStack(spacing: 0) {
-                    Text("KNITTING")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white.opacity(0.6))
-                    Text("\(project.currentRow)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                .buttonStyle(.plain)
+                .disabled(project.currentRow <= 0)
+
+                // Plus
+                Button(action: {
+                    if project.currentRow < project.targetRows { project.currentRow += 1 }
+                }) {
+                    Text("+")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Complete")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white.opacity(0.9))
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.orange)
+                        )
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.orange.opacity(0.9))
-                )
+                .buttonStyle(.plain)
+                .disabled(project.currentRow >= project.targetRows)
             }
-            .buttonStyle(.plain) // Remove default Watch button background
-            
-            // 2. Active Row symbol banner (Center)
-            if let activePattern = project.rowPatterns.first(where: { $0.rowNumber == project.currentRow }) {
-                HStack(spacing: 2) {
-                    ForEach(activePattern.symbols.prefix(5), id: \.self) { sym in
-                        Text(sym)
-                            .font(.system(size: 8, weight: .bold))
-                            .frame(width: 14, height: 14)
-                            .background(Color.white.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 3))
-                    }
-                    if activePattern.symbols.count > 5 {
-                        Text("..")
-                            .font(.system(size: 8))
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .frame(height: 16)
-            } else {
-                Text("No chart row diagram")
-                    .font(.system(size: 8))
-                    .italic()
-                    .foregroundColor(.secondary)
-                    .frame(height: 16)
-            }
-            
-            // 3. Small Undo Button (Bottom Half)
-            Button(action: {
-                if project.currentRow > 0 {
-                    project.currentRow -= 1
-                }
-            }) {
-                Label("Undo Row", systemImage: "arrow.uturn.backward")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, minHeight: 28)
-                    .background(Capsule().fill(Color.white.opacity(0.2)))
-            }
-            .buttonStyle(.plain)
-            .disabled(project.currentRow <= 0)
+            .padding(.bottom, 4)
         }
-        .padding(6)
+        .padding(.horizontal, 8)
         .background(Color.black)
     }
 }
