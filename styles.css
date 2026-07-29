@@ -413,13 +413,13 @@ textarea:focus {
 /* Merged Multi-Stitch Cable styling */
 .stitch-cell.cable-span-4 {
     grid-column: span 4;
-    width: 96px; /* 4 columns * 24px width */
+    width: 100%;
     position: relative;
     padding: 0;
     overflow: hidden;
 }
 
-/* Overlay vertical grid lines at 24px boundaries to align with standard cells */
+/* Overlay vertical grid lines at 24px cell + 1px gap boundaries to align with standard cells */
 .stitch-cell.cable-span-4::after {
     content: "";
     position: absolute;
@@ -428,13 +428,13 @@ textarea:focus {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    background-image: linear-gradient(to right, transparent 23px, var(--border-color) 23px, var(--border-color) 24px);
-    background-size: 24px 100%;
+    background-image: linear-gradient(to right, transparent 24px, var(--border-color) 24px, var(--border-color) 25px);
+    background-size: 25px 100%;
 }
 
 .stitch-cell.cable-span-6 {
     grid-column: span 6;
-    width: 144px; /* 6 columns * 24px width */
+    width: 100%;
     position: relative;
     padding: 0;
     overflow: hidden;
@@ -448,8 +448,8 @@ textarea:focus {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    background-image: linear-gradient(to right, transparent 23px, var(--border-color) 23px, var(--border-color) 24px);
-    background-size: 24px 100%;
+    background-image: linear-gradient(to right, transparent 24px, var(--border-color) 24px, var(--border-color) 25px);
+    background-size: 25px 100%;
 }
 
 /* Hide grid elements that are occupied by the spanning cable block */
