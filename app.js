@@ -122,7 +122,7 @@ function compilePattern() {
     const lines = text.split("\n").map(l => l.trim().toLowerCase());
     
     let castOn = 126;
-    let totalRows = 103;
+    let totalRows = 0;
     let parsedGrid = [];
     let stitchDictionary = {};
     compilerWarnings = []; // Reset warnings list
@@ -181,9 +181,14 @@ function compilePattern() {
             } else {
                 totalRows = Math.max(totalRows, parseInt(rangeStr));
             }
-            recipe.totalRows = totalRows;
         }
     });
+
+    if (totalRows === 0) {
+        totalRows = 103; // Fallback default
+    }
+    recipe.totalRows = totalRows;
+    recipe.castOn = castOn;
 
     appState.columnsCount = castOn;
     appState.targetRows = totalRows;
@@ -617,9 +622,9 @@ function scrollToActiveStitch() {
 function nextStitch() {
     if (appState.mode !== "view") return;
     
-    // Get active stitches length in the current row (ignoring blank buffer spaces)
+    // Get active stitches length in the current row (ignoring blank buffer spaces and span placeholders)
     const rowData = appState.gridData[appState.currentRow - 1];
-    const activeStitchCount = rowData ? rowData.filter(s => s !== "").length : appState.columnsCount;
+    const activeStitchCount = rowData ? rowData.filter(s => s !== "" && s !== "span-holder").length : appState.columnsCount;
     
     // Check if we can slide by 10 more stitches within the current row
     if (appState.currentStitch + 9 < activeStitchCount) {
@@ -651,7 +656,7 @@ function prevStitch() {
         if (appState.currentRow > 1) {
             appState.currentRow--;
             const prevRowData = appState.gridData[appState.currentRow - 1];
-            const prevActiveStitchCount = prevRowData ? prevRowData.filter(s => s !== "").length : appState.columnsCount;
+            const prevActiveStitchCount = prevRowData ? prevRowData.filter(s => s !== "" && s !== "span-holder").length : appState.columnsCount;
             
             // Calculate the starting stitch index of the last 10-stitch block of the previous row (e.g. 121 for 126)
             const lastBlockStart = Math.floor((prevActiveStitchCount - 1) / 10) * 10 + 1;

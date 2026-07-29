@@ -44,25 +44,25 @@ Rows 103-120: st st 1-1-18 (both ends)</textarea>
 
             <div class="card active-tracker">
                 <h3>3. Tracking Controls</h3>
-                <div class="tracker-values">
-                    <div class="tracker-field">
-                        <span class="label">Row</span>
-                        <span id="active-row-num" class="value text-highlight">1</span>
+                <div style="display: flex; gap: 15px; justify-content: space-around; margin-bottom: 12px; margin-top: 10px;">
+                    <div class="row-status">
+                        <span class="label">ROW</span>
+                        <span id="active-row-num" class="row-value" style="font-size: 48px;">1</span>
                     </div>
-                    <div class="tracker-field">
-                        <span class="label">Stitch</span>
-                        <span id="active-stitch-num" class="value text-highlight">1</span>
+                    <div class="row-status">
+                        <span class="label">STITCH</span>
+                        <span id="active-stitch-num" class="row-value" style="font-size: 48px;">1</span>
                     </div>
                 </div>
-                <div id="row-progress" class="progress-txt">Row 1 of 103</div>
+                <div id="row-progress" class="progress-pct" style="text-align: center; margin-bottom: 15px;">Row 1 of 103</div>
                 
-                <div class="control-actions">
-                    <button id="undo-btn" class="btn secondary-btn">Prev Row</button>
-                    <button id="next-btn" class="btn primary-btn">Next Row</button>
+                <div class="tracker-actions">
+                    <button id="undo-btn" class="btn secondary-btn" style="flex: 1;">Prev Row</button>
+                    <button id="next-btn" class="btn primary-btn" style="flex: 1;">Next Row</button>
                 </div>
-                <div class="control-actions" style="margin-top: 8px;">
-                    <button id="prev-stitch-btn" class="btn secondary-btn">Prev Stitch</button>
-                    <button id="next-stitch-btn" class="btn primary-btn">Next (Space)</button>
+                <div class="tracker-actions" style="margin-top: 8px;">
+                    <button id="prev-stitch-btn" class="btn secondary-btn" style="flex: 1;">Prev Stitch</button>
+                    <button id="next-stitch-btn" class="btn primary-btn" style="flex: 1; background-color: var(--secondary-denim); box-shadow: 0 4px 12px rgba(74, 105, 132, 0.2);">Next (Space)</button>
                 </div>
             </div>
 
