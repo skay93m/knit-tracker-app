@@ -181,11 +181,23 @@ function compilePattern() {
         }
     });
 
-    // --- E. Pad Shorter Rows to Max Width to Prevent Layout Shifting ---
+    // --- E. Pad Shorter Rows Symmetrically to Center-Align Shaping ---
     const maxCols = Math.max(...parsedGrid.map(row => row.length));
     for (let r = 0; r < totalRows; r++) {
-        while (parsedGrid[r].length < maxCols) {
-            parsedGrid[r].push("");
+        const rowLen = parsedGrid[r].length;
+        const diff = maxCols - rowLen;
+        if (diff > 0) {
+            const leftPad = Math.floor(diff / 2);
+            const rightPad = diff - leftPad;
+            
+            // Insert spacers on the left side
+            for (let i = 0; i < leftPad; i++) {
+                parsedGrid[r].unshift("");
+            }
+            // Append spacers on the right side
+            for (let i = 0; i < rightPad; i++) {
+                parsedGrid[r].push("");
+            }
         }
     }
 
@@ -219,8 +231,6 @@ function renderGrid() {
         gridElement.appendChild(leftHeader);
         
         // Add Stitch Cells
-        const activeStitchCount = rowData.filter(s => s !== "").length;
-        
         rowData.forEach((symbol, c) => {
             const cell = document.createElement("div");
             
@@ -236,15 +246,14 @@ function renderGrid() {
             }
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
-            // Render purls as blank cells for clean visual display
             cell.innerText = symbol === "-" ? "" : symbol;
             
-            // Set hover tooltip showing coordinates (Right-to-Left stitch numbering)
-            const stitchNum = symbol !== "" ? (activeStitchCount - c) : 0;
+            // Set hover tooltip showing coordinates (Right-to-Left stitch numbering, ignoring left/right padding)
+            const stitchNum = symbol !== "" ? rowData.slice(c).filter(s => s !== "").length : 0;
             if (symbol !== "") {
                 cell.title = `Row ${rowNum}, Stitch ${stitchNum}`;
             } else {
-                cell.title = "Spacer (Increase Buffer)";
+                cell.title = "Spacer (Shaping Buffer)";
             }
             
             // Highlight row if it is the current active knitting row (ONLY in View Mode)
