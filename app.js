@@ -172,18 +172,23 @@ function renderGrid() {
     
     // Rows are rendered bottom-up (Row 103 is index 102 and at the top)
     const totalRows = appState.gridData.length;
+    const maxCols = Math.max(...appState.gridData.map(row => row.length));
+
+    // 1. Render Top Stitch Numbers Header Row
+    appendStitchNumbersRow(maxCols);
     
+    // 2. Render Stitch Rows
     for (let r = totalRows - 1; r >= 0; r--) {
         const rowData = appState.gridData[r];
         const rowNum = r + 1;
         
-        // 1. Add Left Row Number Header
+        // Add Left Row Number Header
         const leftHeader = document.createElement("div");
         leftHeader.className = "row-header-cell";
         leftHeader.innerText = rowNum;
         gridElement.appendChild(leftHeader);
         
-        // 2. Add Stitch Cells
+        // Add Stitch Cells
         const activeStitchCount = rowData.filter(s => s !== "").length;
         
         rowData.forEach((symbol, c) => {
@@ -194,6 +199,11 @@ function renderGrid() {
             if (symbol === "-") symbolClass = "purl-symbol";
             else if (symbol === "o") symbolClass = "yo-symbol";
             else if (symbol === "/" || symbol === "\\") symbolClass = "dec-symbol";
+            
+            // Add spacer-cell class if it's empty padding
+            if (symbol === "") {
+                symbolClass += " spacer-cell";
+            }
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
             cell.innerText = symbol;
@@ -207,14 +217,16 @@ function renderGrid() {
             }
             
             // Highlight row if it is the current active knitting row
-            if (rowNum === appState.currentRow) {
+            if (rowNum === appState.currentRow && symbol !== "") {
                 cell.classList.add("active-row-cell");
             }
             
-            // Interaction: Click to cycle symbol
+            // Interaction: Click to cycle symbol (disabled on spacers)
             cell.addEventListener("click", () => {
+                if (symbol === "") return;
+                
                 const currentIdx = STITCH_CYCLE.indexOf(symbol);
-                const nextIdx = (currentIdx + 1) % STITCH_CYCLE.count;
+                const nextIdx = (currentIdx + 1) % STITCH_CYCLE.length;
                 const nextSymbol = STITCH_CYCLE[nextIdx] || "|";
                 
                 appState.gridData[r][c] = nextSymbol;
@@ -225,19 +237,42 @@ function renderGrid() {
             gridElement.appendChild(cell);
         });
         
-        // 3. Add Right Row Number Header
+        // Add Right Row Number Header
         const rightHeader = document.createElement("div");
         rightHeader.className = "row-header-cell";
         rightHeader.innerText = rowNum;
         gridElement.appendChild(rightHeader);
     }
     
+    // 3. Render Bottom Stitch Numbers Footer Row
+    appendStitchNumbersRow(maxCols);
+    
     // Set dynamic grid layout based on row columns (plus two headers)
-    const maxCols = Math.max(...appState.gridData.map(row => row.length));
     gridElement.style.gridTemplateColumns = `28px repeat(${maxCols}, 24px) 28px`;
     
     // Apply zoom scale transform
     gridElement.style.transform = `scale(${appState.zoomScale})`;
+}
+
+// Helper to render horizontal stitch index numbers (Right-to-Left)
+function appendStitchNumbersRow(maxCols) {
+    // Left corner spacer
+    const leftCorner = document.createElement("div");
+    leftCorner.className = "row-header-cell";
+    gridElement.appendChild(leftCorner);
+    
+    // Stitch numbers (Right-to-Left)
+    for (let c = 0; c < maxCols; c++) {
+        const numCell = document.createElement("div");
+        numCell.className = "row-header-cell stitch-num-cell";
+        numCell.innerText = maxCols - c;
+        gridElement.appendChild(numCell);
+    }
+    
+    // Right corner spacer
+    const rightCorner = document.createElement("div");
+    rightCorner.className = "row-header-cell";
+    gridElement.appendChild(rightCorner);
 }
 
 // ==========================================

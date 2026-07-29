@@ -296,17 +296,29 @@ textarea:focus {
     transition: background-color 0.1s;
 }
 
-.stitch-cell:hover {
+.stitch-cell:hover:not(.spacer-cell) {
     background-color: rgba(185, 82, 60, 0.1);
 }
 
+/* Spacer/padding cells match the cream numbering border */
+.stitch-cell.spacer-cell {
+    background-color: var(--bg-cream);
+    color: transparent;
+    border: none;
+    cursor: default;
+}
+
+.stitch-cell.spacer-cell:hover {
+    background-color: var(--bg-cream);
+}
+
 /* Active Row Highlight styles */
-.stitch-cell.active-row-cell {
+.stitch-cell.active-row-cell:not(.spacer-cell) {
     background-color: rgba(185, 82, 60, 0.25);
     border: 1px solid var(--primary-terracotta);
 }
 
-.stitch-cell.active-row-cell:hover {
+.stitch-cell.active-row-cell:not(.spacer-cell):hover {
     background-color: rgba(185, 82, 60, 0.35);
 }
 
@@ -340,3 +352,13 @@ textarea:focus {
     align-items: center;
     justify-content: center;
 }
+
+/* Stitch number cell formatting */
+.row-header-cell.stitch-num-cell {
+    width: 24px;
+    font-size: 8px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+}
+
