@@ -1,151 +1,148 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
+// MARK: - Pattern Loader View
+/// Lets the user load a KnitFlow Studio .json export file and shows all loaded patterns.
 struct EditorView: View {
-    // Reference to our global AppState (passed from the parent view)
     @Bindable var state: AppState
-    
-    // MARK: - Draft States (Local variables holding temporary text field inputs)
-    @State private var newYarnBrand = ""
-    @State private var newYarnWeight = "DK"
-    @State private var newYarnColor = ""
-    @State private var newYarnMeters = ""
-    @State private var newYarnFiber = ""
-    
-    @State private var targetRowNumber = ""
-    @State private var patternInput = "" // e.g. "| - o - |"
-    
-    let weights = ["Lace", "Fingering", "DK", "Worsted", "Chunky", "Super Chunky"]
-    
+    @State private var showFilePicker = false
+    @State private var statusMessage  = ""
+    @State private var showError      = false
+    @State private var errorMessage   = ""
+
     var body: some View {
         NavigationStack {
-            Form {
-                // SECTION 1: YARN INVENTORY
-                Section("Add Yarn to Stash") {
-                    TextField("Brand / Manufacturer", text: $newYarnBrand)
-                    
-                    Picker("Weight Category", selection: $newYarnWeight) {
-                        ForEach(weights, id: \.self) { weight in
-                            Text(weight).tag(weight)
-                        }
+            List {
+                // ── Load button ──────────────────────────────────────────
+                Section {
+                    Button(action: { showFilePicker = true }) {
+                        Label("Load Pattern from KnitFlow Studio", systemImage: "doc.badge.plus")
+                            .font(.headline)
+                            .foregroundColor(.orange)
                     }
-                    
-                    TextField("Colorway", text: $newYarnColor)
-                    
-                    TextField("Total Length (Meters)", text: $newYarnMeters)
-                        .keyboardType(.numberPad)
-                    
-                    TextField("Fiber Content (e.g. 100% Wool)", text: $newYarnFiber)
-                    
-                    Button(action: addYarnToInventory) {
-                        Label("Add to Stash", systemImage: "tray.and.arrow.down.fill")
-                            .fontWeight(.medium)
+
+                    if !statusMessage.isEmpty {
+                        Text(statusMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .disabled(newYarnBrand.isEmpty || newYarnColor.isEmpty || newYarnMeters.isEmpty)
+                } header: {
+                    Text("Import Pattern")
+                } footer: {
+                    Text("Export a .json file from KnitFlow Studio (web), then tap Load to bring it here.")
                 }
-                
-                // SECTION 2: PATTERN ROW EDITOR
-                if let activeProject = state.activeProject {
-                    Section("Edit Row Diagrams (\(activeProject.name))") {
-                        TextField("Row Number (e.g. 42)", text: $targetRowNumber)
-                            .keyboardType(.numberPad)
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            TextField("Input Pattern (e.g. | - o - |)", text: $patternInput)
-                                .textInputAutocapitalization(.none)
-                                .disableAutocorrection(true)
-                            Text("Use standard symbols: | (Knit), - (Purl), o (Yarn Over), / (K2Tog), \\ (SSK)")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Button(action: saveRowPattern) {
-                            Label("Save Row Pattern Diagram", systemImage: "doc.badge.plus")
-                                .fontWeight(.medium)
-                        }
-                        .disabled(targetRowNumber.isEmpty || patternInput.isEmpty)
-                    }
-                    
-                    // Display existing custom row diagrams
-                    Section("Defined Row Diagrams") {
-                        if activeProject.rowPatterns.isEmpty {
-                            Text("No row patterns defined yet.")
-                                .font(.footnote)
-                                .italic()
-                                .foregroundColor(.secondary)
-                        } else {
-                            ForEach(activeProject.rowPatterns.sorted(by: { $0.rowNumber < $1.rowNumber })) { pattern in
+
+                // ── Loaded patterns ───────────────────────────────────────
+                if !state.projects.isEmpty {
+                    Section("Loaded Patterns") {
+                        ForEach(state.projects) { project in
+                            Button(action: {
+                                state.activeProjectID = project.id
+                                StorageManager.shared.save(state: state)
+                                statusMessage = "Active: \(project.name)"
+                            }) {
                                 HStack {
-                                    Text("Row \(pattern.rowNumber):")
-                                        .fontWeight(.bold)
-                                        .frame(width: 70, alignment: .leading)
-                                    
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 2) {
-                                            ForEach(pattern.symbols, id: \.self) { sym in
-                                                Text(sym)
-                                                    .font(.caption)
-                                                    .frame(width: 16, height: 16)
-                                                    .background(Color(.systemGray6))
-                                            }
-                                        }
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(project.name)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.primary)
+                                        Text("\(project.targetRows) rows · row \(project.currentRow) in progress")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    if state.activeProjectID == project.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.orange)
                                     }
                                 }
                             }
                         }
-                    }
-                } else {
-                    Section("Project Link") {
-                        Text("Please create or select an active project first.")
-                            .italic()
-                            .foregroundColor(.secondary)
+                        .onDelete { indexSet in
+                            state.projects.remove(atOffsets: indexSet)
+                            if state.activeProject == nil {
+                                state.activeProjectID = state.projects.first?.id
+                            }
+                            StorageManager.shared.save(state: state)
+                        }
                     }
                 }
             }
-            .navigationTitle("KnitFlow Editor")
+            .navigationTitle("Pattern")
+            .fileImporter(
+                isPresented: $showFilePicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                importFile(result: result)
+            }
+            .alert("Import Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage)
+            }
         }
     }
-    
-    // MARK: - Actions
-    
-    private func addYarnToInventory() {
-        guard let meters = Int(newYarnMeters) else { return }
-        
-        let yarn = Yarn(
-            brand: newYarnBrand,
-            weight: newYarnWeight,
-            color: newYarnColor,
-            meters: meters,
-            fiber: newYarnFiber
-        )
-        
-        state.yarns.append(yarn)
-        StorageManager.shared.save(state: state)
-        
-        // Reset fields
-        newYarnBrand = ""
-        newYarnColor = ""
-        newYarnMeters = ""
-        newYarnFiber = ""
+
+    // MARK: - Import Logic
+
+    private func importFile(result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+            showError = true
+
+        case .success(let urls):
+            guard let url = urls.first else { return }
+
+            // Security-scoped access required for file-picker URLs
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+
+            do {
+                let data = try Data(contentsOf: url)
+                guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                    throw ImportError.invalidFormat
+                }
+
+                let targetRows = json["targetRows"] as? Int ?? 103
+                let currentRow = json["currentRow"] as? Int ?? 1
+                let patternText = json["patternText"] as? String ?? ""
+
+                // Derive a readable name from the filename
+                var name = url.deletingPathExtension().lastPathComponent
+                    .replacingOccurrences(of: "_", with: " ")
+                    .capitalized
+                if name.isEmpty || name.lowercased() == "knitflow pattern" {
+                    name = "KnitFlow Pattern"
+                }
+
+                let project = Project(
+                    name: name,
+                    targetRows: targetRows,
+                    needleSize: "",
+                    patternNotes: patternText
+                )
+                project.currentRow = min(currentRow, targetRows)
+
+                state.projects.append(project)
+                state.activeProjectID = project.id
+                StorageManager.shared.save(state: state)
+
+                statusMessage = "✓ Loaded \"\(name)\" — \(targetRows) rows"
+
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
     }
-    
-    private func saveRowPattern() {
-        guard let activeProject = state.activeProject,
-              let rowNum = Int(targetRowNumber) else { return }
-        
-        // Parse the input string into characters, stripping white spaces
-        let cleanInput = patternInput.replacingOccurrences(of: " ", with: "")
-        let symbolsArray = cleanInput.map { String($0) }
-        
-        let newPattern = RowPattern(rowNumber: rowNum, symbols: symbolsArray)
-        
-        // If a pattern for this row already exists, remove it first
-        activeProject.rowPatterns.removeAll(where: { $0.rowNumber == rowNum })
-        activeProject.rowPatterns.append(newPattern)
-        
-        StorageManager.shared.save(state: state)
-        
-        // Reset inputs
-        targetRowNumber = ""
-        patternInput = ""
+}
+
+// MARK: - Import Error
+enum ImportError: LocalizedError {
+    case invalidFormat
+    var errorDescription: String? {
+        "File is not a valid KnitFlow pattern. Export a fresh .json from KnitFlow Studio."
     }
 }
