@@ -184,6 +184,8 @@ function renderGrid() {
         gridElement.appendChild(leftHeader);
         
         // 2. Add Stitch Cells
+        const activeStitchCount = rowData.filter(s => s !== "").length;
+        
         rowData.forEach((symbol, c) => {
             const cell = document.createElement("div");
             
@@ -195,6 +197,14 @@ function renderGrid() {
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
             cell.innerText = symbol;
+            
+            // Set hover tooltip showing coordinates (Right-to-Left stitch numbering)
+            if (symbol !== "") {
+                const stitchNum = activeStitchCount - c;
+                cell.title = `Row ${rowNum}, Stitch ${stitchNum}`;
+            } else {
+                cell.title = "Spacer (Increase Buffer)";
+            }
             
             // Highlight row if it is the current active knitting row
             if (rowNum === appState.currentRow) {
