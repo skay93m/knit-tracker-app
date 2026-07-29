@@ -346,18 +346,9 @@ function renderGrid() {
                 symbolClass = symbol === "c2r" ? "cable-span-4 c2r-symbol" : "cable-span-4 c2l-symbol";
                 const isC2R = symbol === "c2r";
                 
-                // Render custom SVG crossing diagonal lines
-                cell.innerHTML = isC2R ? `
-                  <svg width="100%" height="100%" viewBox="0 0 96 24" preserveAspectRatio="none" style="display: block;">
-                    <line x1="0" y1="24" x2="96" y2="0" stroke="var(--secondary-denim)" stroke-width="1" stroke-dasharray="3,3"/>
-                    <line x1="0" y1="0" x2="96" y2="24" stroke="var(--secondary-denim)" stroke-width="2"/>
-                  </svg>
-                ` : `
-                  <svg width="100%" height="100%" viewBox="0 0 96 24" preserveAspectRatio="none" style="display: block;">
-                    <line x1="0" y1="0" x2="96" y2="24" stroke="var(--secondary-denim)" stroke-width="1" stroke-dasharray="3,3"/>
-                    <line x1="0" y1="24" x2="96" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                  </svg>
-                `;
+                // Render official JIS SVG cable cross graphic
+                const file = isC2R ? "crossright" : "crossleft";
+                cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
             } else {
                 // Render standard Japanese JIS SVG vector graphics
                 if (symbol === "-") {
