@@ -81,6 +81,17 @@ Rows 103-120: st st 1-1-18 (both ends)</textarea>
                 </div>
             </div>
 
+            <!-- Import / Export Section -->
+            <div class="card">
+                <h3>5. Import / Export File</h3>
+                <p style="font-size: 11px; margin-bottom: 12px; color: var(--charcoal-muted);">Save your design as a portable file to load into the mobile companion tracking app:</p>
+                <div class="control-actions" style="display: flex; gap: 8px;">
+                    <button id="export-btn" class="btn secondary-btn" style="flex: 1;">Export (.json)</button>
+                    <button id="import-btn-trigger" class="btn secondary-btn" style="flex: 1;">Import File</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;" />
+                </div>
+            </div>
+
             <div class="card legend">
                 <h3>3. Symbol Key</h3>
                 <div class="legend-grid">

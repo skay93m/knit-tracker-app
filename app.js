@@ -32,6 +32,9 @@ const gridElement = document.getElementById("knitting-chart-grid");
 const gridViewport = document.getElementById("grid-viewport");
 const stitchPaletteCard = document.getElementById("stitch-palette-card");
 const paletteBtns = document.querySelectorAll(".palette-btn");
+const exportBtn = document.getElementById("export-btn");
+const importBtnTrigger = document.getElementById("import-btn-trigger");
+const importFile = document.getElementById("import-file");
 
 // ==========================================
 // INITIALIZATION
@@ -737,3 +740,57 @@ function loadFromLocalStorage() {
         }
     }
 }
+
+// ==========================================
+// FILE IMPORT / EXPORT (Companion App Handshake)
+// ==========================================
+exportBtn.addEventListener("click", () => {
+    const exportState = {
+        ...appState,
+        patternText: patternInput.value
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportState, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `knitflow_pattern.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+});
+
+importBtnTrigger.addEventListener("click", () => {
+    importFile.click();
+});
+
+importFile.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const importedState = JSON.parse(evt.target.result);
+            if (importedState.gridData && Array.isArray(importedState.gridData)) {
+                appState.currentRow = importedState.currentRow || 1;
+                appState.currentStitch = importedState.currentStitch || 1;
+                appState.targetRows = importedState.targetRows || 103;
+                appState.columnsCount = importedState.columnsCount || 126;
+                appState.gridData = importedState.gridData;
+                
+                if (importedState.patternText) {
+                    patternInput.value = importedState.patternText;
+                }
+                
+                saveToLocalStorage();
+                updateTrackerUI();
+                alert("Pattern file imported successfully!");
+            } else {
+                alert("Failed to parse pattern file: Missing grid data structure.");
+            }
+        } catch (err) {
+            alert("Error reading pattern file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+});
