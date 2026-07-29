@@ -77,16 +77,23 @@ function compilePattern() {
 
     // 3. Compile Row-by-Row instructions
     lines.forEach(line => {
-        // --- A. 1x1 Ribbing (Rows 1-24: 1x1 Rib) ---
-        if (line.includes("1x1 rib")) {
+        // --- A. Generic Ribbing (e.g. Rows 1-24: 2x2 Rib or 1x1 Rib) ---
+        if (line.includes("rib")) {
+            const ribMatch = line.match(/(\d+)x(\d+)\s+rib/);
             const rangeMatch = line.match(/rows (\d+)-(\d+)/);
-            if (rangeMatch) {
+            
+            if (ribMatch && rangeMatch) {
+                const kCount = parseInt(ribMatch[1]);
+                const pCount = parseInt(ribMatch[2]);
+                const cycleLength = kCount + pCount;
+                
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
+                
                 for (let r = startRow - 1; r < endRow; r++) {
                     for (let c = 0; c < castOn; c++) {
-                        // Alternate Knit (|) and Purl (-)
-                        parsedGrid[r][c] = (c % 2 === 0) ? "|" : "-";
+                        const pos = c % cycleLength;
+                        parsedGrid[r][c] = (pos < kCount) ? "|" : "-";
                     }
                 }
             }
