@@ -6,7 +6,8 @@ let appState = {
     columnsCount: 126,
     gridData: [], // 2D array: row 0 is Row 1 (bottom), row 102 is Row 103 (top)
     zoomScale: 1.0,
-    mode: "view" // Modes: "view" (read-only tracking) or "edit" (interactive design editing)
+    mode: "view", // Modes: "view" (read-only tracking) or "edit" (interactive design editing)
+    selectedCell: null // Edit Mode cell selection coordinate: { r: rowIndex, c: colIndex }
 };
 
 // Stitch symbol cycle: | (Knit) -> - (Purl) -> o (YO) -> / (K2tog) -> \ (SSK)
@@ -29,6 +30,8 @@ const zoomInBtn = document.getElementById("zoom-in");
 const zoomOutBtn = document.getElementById("zoom-out");
 const gridElement = document.getElementById("knitting-chart-grid");
 const gridViewport = document.getElementById("grid-viewport");
+const stitchPaletteCard = document.getElementById("stitch-palette-card");
+const paletteBtns = document.querySelectorAll(".palette-btn");
 
 // ==========================================
 // INITIALIZATION
@@ -395,16 +398,21 @@ function renderGrid() {
                 }
             }
             
-            // Interaction: Click to cycle symbol (Edit Mode only, disabled on spacers/holders)
+            // Highlight selected cell (Edit Mode only)
+            if (appState.mode === "edit" && appState.selectedCell && appState.selectedCell.r === r && appState.selectedCell.c === c) {
+                cell.classList.add("selected-cell");
+            }
+            
+            // Interaction: Click to select cell (Edit Mode only, disabled on spacers/holders)
             cell.addEventListener("click", () => {
                 if (appState.mode !== "edit" || symbol === "" || symbol === "span-holder") return;
                 
-                const currentIdx = STITCH_CYCLE.indexOf(symbol);
-                const nextIdx = (currentIdx + 1) % STITCH_CYCLE.length;
-                const nextSymbol = STITCH_CYCLE[nextIdx] || "|";
-                
-                appState.gridData[r][c] = nextSymbol;
-                saveToLocalStorage();
+                // Toggle selection
+                if (appState.selectedCell && appState.selectedCell.r === r && appState.selectedCell.c === c) {
+                    appState.selectedCell = null;
+                } else {
+                    appState.selectedCell = { r, c };
+                }
                 renderGrid();
             });
             
@@ -476,7 +484,16 @@ function updateTrackerUI() {
     cells.forEach(c => {
         c.classList.remove("active-row-cell");
         c.classList.remove("active-stitch-cell");
+        c.classList.remove("selected-cell");
     });
+    
+    // Toggle Stitch Palette panel visibility in sidebar
+    if (appState.mode === "edit") {
+        stitchPaletteCard.style.display = "block";
+    } else {
+        stitchPaletteCard.style.display = "none";
+        appState.selectedCell = null; // Clear selection when exiting Edit Mode
+    }
     
     renderGrid();
     if (appState.mode === "view") {
@@ -612,6 +629,57 @@ clearBtn.addEventListener("click", () => {
         compilePattern();
         updateTrackerUI();
     }
+});
+
+// Stitch Palette Selection application
+paletteBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+        if (!appState.selectedCell) {
+            alert("Please select a cell on the grid first by clicking it!");
+            return;
+        }
+        
+        const { r, c } = appState.selectedCell;
+        const targetStitch = btn.getAttribute("data-stitch");
+        const rowData = appState.gridData[r];
+        
+        // Handle Cable Merges (C2R/C2L require 4 horizontal cells)
+        if (targetStitch === "c2r" || targetStitch === "c2l") {
+            if (c + 3 >= rowData.length) {
+                alert("Not enough stitches to the left to place a 4-stitch cable!");
+                return;
+            }
+            
+            // Check that we are not overwriting empty buffer spaces
+            const targetSlice = rowData.slice(c, c + 4);
+            if (targetSlice.some(s => s === "")) {
+                alert("Cannot place a cable over shaping buffer spacers!");
+                return;
+            }
+            
+            // Apply cable spans
+            appState.gridData[r][c] = targetStitch;
+            appState.gridData[r][c + 1] = "span-holder";
+            appState.gridData[r][c + 2] = "span-holder";
+            appState.gridData[r][c + 3] = "span-holder";
+        } else {
+            // Unmerge cable if editing the start cell of a cable
+            const currentSymbol = appState.gridData[r][c];
+            if (currentSymbol === "c2r" || currentSymbol === "c2l") {
+                if (c + 3 < rowData.length) {
+                    appState.gridData[r][c + 1] = "|";
+                    appState.gridData[r][c + 2] = "|";
+                    appState.gridData[r][c + 3] = "|";
+                }
+            }
+            
+            // Apply standard single stitch
+            appState.gridData[r][c] = targetStitch;
+        }
+        
+        saveToLocalStorage();
+        renderGrid();
+    });
 });
 
 // Zoom Controls

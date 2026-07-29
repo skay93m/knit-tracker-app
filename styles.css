@@ -424,3 +424,11 @@ textarea:focus {
     display: none !important;
 }
 
+/* Selected cell in Edit Mode */
+.stitch-cell.selected-cell:not(.spacer-cell) {
+    outline: 2.5px solid var(--accent-gold) !important;
+    outline-offset: -2.5px;
+    background-color: rgba(214, 158, 46, 0.12) !important;
+    z-index: 5;
+}
+
