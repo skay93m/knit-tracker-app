@@ -70,10 +70,19 @@ function compilePattern() {
     let stitchDictionary = {};
     compilerWarnings = []; // Reset warnings list
 
+    // Structured JIS Recipe object for mobile companion app size scaling
+    let recipe = {
+        castOn: 126,
+        totalRows: 103,
+        dictionary: {},
+        shapingBlocks: []
+    };
+
     // 1. Read configuration parameters and stitch definitions dynamically
     lines.forEach(line => {
         if (line.startsWith("cast on:")) {
             castOn = parseInt(line.replace("cast on:", "").trim()) || 126;
+            recipe.castOn = castOn;
         } else if (line.startsWith("pattern ")) {
             // Parse custom stitch definitions: pattern name: symbol_string (repeat X)
             const cleanLine = line.replace("pattern ", "").trim();
@@ -92,10 +101,13 @@ function compilePattern() {
                 const computedWidth = symbolsArray.reduce((acc, sym) => acc + getStitchWidth(sym), 0);
                 const repeatSize = repeatMatch ? parseInt(repeatMatch[1]) : computedWidth;
                 
-                stitchDictionary[name] = {
+                const dictionaryEntry = {
                     symbols: symbolsArray,
                     repeat: repeatSize
                 };
+                
+                stitchDictionary[name] = dictionaryEntry;
+                recipe.dictionary[name] = dictionaryEntry;
             }
         }
         
@@ -103,6 +115,7 @@ function compilePattern() {
         const rangeMatch = line.match(/rows (\d+)-(\d+)/);
         if (rangeMatch) {
             totalRows = Math.max(totalRows, parseInt(rangeMatch[2]));
+            recipe.totalRows = totalRows;
         }
     });
 
@@ -129,6 +142,12 @@ function compilePattern() {
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
                 
+                recipe.shapingBlocks.push({
+                    rows: `${startRow}-${endRow}`,
+                    type: "ribbing",
+                    formula: `${kCount}x${pCount}`
+                });
+                
                 for (let r = startRow - 1; r < endRow; r++) {
                     for (let c = 0; c < castOn; c++) {
                         const pos = c % cycleLength;
@@ -142,6 +161,12 @@ function compilePattern() {
         else if (line.startsWith("row 25:")) {
             const sectionsText = line.replace("row 25:", "").trim();
             const sections = sectionsText.split(",").map(s => s.trim());
+            
+            recipe.shapingBlocks.push({
+                rows: "25",
+                type: "segments",
+                sequence: sectionsText
+            });
             
             let row25Stitches = [];
             
@@ -202,6 +227,13 @@ function compilePattern() {
             if (rangeMatch) {
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
+                
+                recipe.shapingBlocks.push({
+                    rows: `${startRow}-${endRow}`,
+                    type: "repeat",
+                    target: 25
+                });
+                
                 const row25Data = [...parsedGrid[24]];
                 for (let r = startRow - 1; r < endRow; r++) {
                     parsedGrid[r] = [...row25Data];
@@ -238,6 +270,14 @@ function compilePattern() {
                 }
                 
                 const atBothEnds = line.includes("each end") || line.includes("both ends");
+                
+                recipe.shapingBlocks.push({
+                    rows: `${startRow}-${endRow}`,
+                    type: "shaping",
+                    formula: `${stepRows}-${decStitches}-${times}`,
+                    edges: atBothEnds ? "both" : "single",
+                    direction: isIncrease ? "increase" : "decrease"
+                });
                 
                 // Base width on the row prior to startRow (e.g. Row 102 width = 127)
                 let currentWidth = parsedGrid[startRow - 2] ? parsedGrid[startRow - 2].filter(s => s !== "").length : castOn;
@@ -297,6 +337,7 @@ function compilePattern() {
     }
 
     appState.gridData = parsedGrid;
+    appState.recipe = recipe;
     saveToLocalStorage();
     renderGrid();
 
@@ -709,6 +750,7 @@ function saveToLocalStorage() {
     localStorage.setItem("knitflow_target_rows", appState.targetRows);
     localStorage.setItem("knitflow_columns_count", appState.columnsCount);
     localStorage.setItem("knitflow_grid_data", JSON.stringify(appState.gridData));
+    localStorage.setItem("knitflow_recipe", JSON.stringify(appState.recipe));
     localStorage.setItem("knitflow_pattern_input", patternInput.value);
     localStorage.setItem("knitflow_mode", appState.mode);
 }
@@ -719,6 +761,7 @@ function loadFromLocalStorage() {
     const savedTarget = localStorage.getItem("knitflow_target_rows");
     const savedCols = localStorage.getItem("knitflow_columns_count");
     const savedGrid = localStorage.getItem("knitflow_grid_data");
+    const savedRecipe = localStorage.getItem("knitflow_recipe");
     const savedInput = localStorage.getItem("knitflow_pattern_input");
     const savedMode = localStorage.getItem("knitflow_mode");
     
@@ -727,6 +770,7 @@ function loadFromLocalStorage() {
     if (savedTarget) appState.targetRows = parseInt(savedTarget);
     if (savedCols) appState.columnsCount = parseInt(savedCols);
     if (savedGrid) appState.gridData = JSON.parse(savedGrid);
+    if (savedRecipe) appState.recipe = JSON.parse(savedRecipe);
     if (savedInput) patternInput.value = savedInput;
     
     if (savedMode) {
@@ -777,6 +821,7 @@ importFile.addEventListener("change", (e) => {
                 appState.targetRows = importedState.targetRows || 103;
                 appState.columnsCount = importedState.columnsCount || 126;
                 appState.gridData = importedState.gridData;
+                appState.recipe = importedState.recipe || null;
                 
                 if (importedState.patternText) {
                     patternInput.value = importedState.patternText;
