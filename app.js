@@ -469,20 +469,23 @@ function renderGrid() {
                 
                 if (is6) {
                     const isC3L = symbol === "c3l";
-                    // Draw a single crossing line connecting the centers of the two 3-stitch blocks (Track 1 at 36px and Track 4 at 108px)
+                    // Draw a single crossing line spanning all 6 columns (from 12px to 132px)
+                    // The background line is split into two solid segments to create a clean visual gap at the intersection
                     cell.innerHTML = isC3L ? `
                       <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <!-- Underlap line (dashed) slanting from bottom-left (36px) to top-right (108px) -->
-                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-dasharray="3,3"/>
-                        <!-- Overlap line (solid) slanting from bottom-right (108px) to top-left (36px) -->
-                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Underlap line (broken solid line with a center gap) slanting from bottom-left (12px) to top-right (132px) -->
+                        <line x1="12" y1="24" x2="60" y2="14.4" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="84" y1="9.6" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Overlap line (continuous solid line) slanting from bottom-right (132px) to top-left (12px) -->
+                        <line x1="132" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     ` : `
                       <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <!-- Underlap line (dashed) slanting from bottom-right (108px) to top-left (36px) -->
-                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-dasharray="3,3"/>
-                        <!-- Overlap line (solid) slanting from bottom-left (36px) to top-right (108px) -->
-                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Underlap line (broken solid line with a center gap) slanting from bottom-right (132px) to top-left (12px) -->
+                        <line x1="132" y1="24" x2="84" y2="14.4" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="60" y1="9.6" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Overlap line (continuous solid line) slanting from bottom-left (12px) to top-right (132px) -->
+                        <line x1="12" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     `;
                 } else {
