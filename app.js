@@ -359,15 +359,26 @@ function renderGrid() {
                   </svg>
                 `;
             } else {
-                // Render standard stitch symbols
-                if (symbol === "-") symbolClass = "purl-symbol";
-                else if (symbol === "o") symbolClass = "yo-symbol";
-                else if (symbol === "/" || symbol === "\\") symbolClass = "dec-symbol";
+                // Render standard Japanese JIS symbols
+                if (symbol === "-") {
+                    symbolClass = "purl-symbol";
+                    cell.innerText = ""; // Purl rendered as clean blank space per preference
+                } else if (symbol === "o") {
+                    symbolClass = "yo-symbol";
+                    cell.innerText = "○"; // JIS Yarn Over circle
+                } else if (symbol === "/") {
+                    symbolClass = "dec-symbol";
+                    cell.innerText = "人"; // JIS K2tog Right Decrease
+                } else if (symbol === "\\") {
+                    symbolClass = "dec-symbol";
+                    cell.innerText = "入"; // JIS SSK Left Decrease
+                } else {
+                    cell.innerText = symbol; // Knit '|'
+                }
                 
                 if (symbol === "") {
                     symbolClass += " spacer-cell";
                 }
-                cell.innerText = symbol === "-" ? "" : symbol;
             }
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
