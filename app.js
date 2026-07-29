@@ -472,27 +472,27 @@ function renderGrid() {
                     // Draw a single crossing line spanning all 6 columns (from 12px to 132px)
                     // The background line is split into two solid segments to create a clean visual gap at the intersection
                     cell.innerHTML = isC3L ? `
-                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block; opacity: 0.85;">
                         <!-- Underlap line (broken solid line with a center gap) slanting from bottom-left (12px) to top-right (132px) -->
-                        <line x1="12" y1="24" x2="60" y2="14.4" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="84" y1="9.6" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="12" y1="24" x2="60" y2="14.4" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="84" y1="9.6" x2="132" y2="0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
                         <!-- Overlap line (continuous solid line) slanting from bottom-right (132px) to top-left (12px) -->
-                        <line x1="132" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="132" y1="24" x2="12" y2="0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     ` : `
-                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block; opacity: 0.85;">
                         <!-- Underlap line (broken solid line with a center gap) slanting from bottom-right (132px) to top-left (12px) -->
-                        <line x1="132" y1="24" x2="84" y2="14.4" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="60" y1="9.6" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="132" y1="24" x2="84" y2="14.4" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="60" y1="9.6" x2="12" y2="0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
                         <!-- Overlap line (continuous solid line) slanting from bottom-left (12px) to top-right (132px) -->
-                        <line x1="12" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="12" y1="24" x2="132" y2="0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     `;
                 } else {
                     // Render the official JIS SVG cable cross graphic (stretched automatically by the browser to match column span)
                     const isRightCable = symbol === "c2r";
                     const file = isRightCable ? "crossright" : "crossleft";
-                    cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
+                    cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.85;"/>`;
                 }
             } else {
                 // Render standard Japanese JIS SVG vector graphics
@@ -501,13 +501,13 @@ function renderGrid() {
                     cell.innerText = ""; // Purl rendered as clean blank space per preference
                 } else if (symbol === "o") {
                     symbolClass = "yo-symbol";
-                    cell.innerHTML = `<img src="symbols/yarnover.svg" alt="YO" style="width: 14px; height: 14px; object-fit: contain; pointer-events: none;"/>`;
+                    cell.innerHTML = `<img src="symbols/yarnover.svg" alt="YO" style="width: 14px; height: 14px; object-fit: contain; pointer-events: none; opacity: 0.85;"/>`;
                 } else if (symbol === "/") {
                     symbolClass = "dec-symbol";
-                    cell.innerHTML = `<img src="symbols/decreaseright.svg" alt="K2Tog" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none;"/>`;
+                    cell.innerHTML = `<img src="symbols/decreaseright.svg" alt="K2Tog" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none; opacity: 0.85;"/>`;
                 } else if (symbol === "\\") {
                     symbolClass = "dec-symbol";
-                    cell.innerHTML = `<img src="symbols/decreaseleft.svg" alt="SSK" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none;"/>`;
+                    cell.innerHTML = `<img src="symbols/decreaseleft.svg" alt="SSK" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none; opacity: 0.85;"/>`;
                 } else if (symbol === "|") {
                     symbolClass = "knit-symbol";
                     cell.innerHTML = `<img src="symbols/knit.svg" alt="Knit" style="width: 12px; height: 20px; object-fit: contain; pointer-events: none; opacity: 0.85;"/>`;
