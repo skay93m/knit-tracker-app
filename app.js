@@ -53,11 +53,21 @@ function compilePattern() {
     let castOn = 126;
     let totalRows = 103;
     let parsedGrid = [];
+    let stitchDictionary = {};
 
-    // 1. Read configuration parameters dynamically
+    // 1. Read configuration parameters and stitch definitions dynamically
     lines.forEach(line => {
         if (line.startsWith("cast on:")) {
             castOn = parseInt(line.replace("cast on:", "").trim()) || 126;
+        } else if (line.startsWith("pattern ")) {
+            // Parse custom stitch definitions: pattern name: symbol_string
+            const cleanLine = line.replace("pattern ", "").trim();
+            const colonIdx = cleanLine.indexOf(":");
+            if (colonIdx !== -1) {
+                const name = cleanLine.substring(0, colonIdx).trim().toLowerCase();
+                const symbolsStr = cleanLine.substring(colonIdx + 1).replace(/\s+/g, "");
+                stitchDictionary[name] = Array.from(symbolsStr);
+            }
         }
         
         // Dynamically find the maximum row boundary mentioned in the text (e.g., Rows 103-120)
@@ -99,7 +109,7 @@ function compilePattern() {
             }
         }
         
-        // --- B. Row 25 Setup & Increase Row ---
+        // --- B. Row 25 Setup & Increase Row (Using Stitch Dictionary) ---
         else if (line.startsWith("row 25:")) {
             const sectionsText = line.replace("row 25:", "").trim();
             const sections = sectionsText.split(",").map(s => s.trim());
@@ -109,25 +119,20 @@ function compilePattern() {
             sections.forEach(sec => {
                 const parts = sec.split(":");
                 if (parts.length === 2) {
-                    const patternName = parts[0].trim();
+                    const patternName = parts[0].trim().toLowerCase();
                     const count = parseInt(parts[1].replace(/\(.*\)/, "").trim());
                     
                     let segment = [];
-                    if (patternName === "a") {
+                    const definition = stitchDictionary[patternName];
+                    
+                    if (definition && definition.length > 0) {
+                        // Cycle through custom symbols to fill the segment width
+                        for (let i = 0; i < count; i++) {
+                            segment.push(definition[i % definition.length]);
+                        }
+                    } else {
+                        // Fallback to stockinette
                         segment = Array(count).fill("|");
-                    } else if (patternName === "b") {
-                        for (let i = 0; i < count; i++) {
-                            segment.push(i % 2 === 0 ? "-" : "|");
-                        }
-                    } else if (patternName === "c") {
-                        for (let i = 0; i < count; i++) {
-                            segment.push((i % 4 < 2) ? "|" : "-");
-                        }
-                    } else if (patternName === "d") {
-                        segment = ["|", "|", "-", "-", "|", "|", "\\", "\\", "o", "|", "o", "/", "/", "|", "|", "-", "-", "|", "|"];
-                        while (segment.length < count) {
-                            segment.push(segment.length % 2 === 0 ? "|" : "-");
-                        }
                     }
                     row25Stitches = row25Stitches.concat(segment);
                 }
