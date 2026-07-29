@@ -452,33 +452,10 @@ function renderGrid() {
                 const is6 = symbol === "c3r" || symbol === "c3l";
                 symbolClass = is6 ? `cable-span-6 ${symbol}-symbol` : `cable-span-4 ${symbol}-symbol`;
                 
-                if (is6) {
-                    const isC3L = symbol === "c3l";
-                    // Render official JIS 3/3 Left/Right Cable crossover vector lines
-                    cell.innerHTML = isC3L ? `
-                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <line x1="0" y1="24" x2="72" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="18" y1="24" x2="90" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="72" y1="24" x2="0" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                        <line x1="90" y1="24" x2="18" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                      </svg>
-                    ` : `
-                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
-                        <line x1="72" y1="24" x2="0" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="90" y1="24" x2="18" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--secondary-denim)" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        <line x1="0" y1="24" x2="72" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                        <line x1="18" y1="24" x2="90" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
-                      </svg>
-                    `;
-                } else {
-                    // Render official JIS SVG 2x2 cable cross graphic
-                    const file = symbol === "c2r" ? "crossright" : "crossleft";
-                    cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
-                }
+                // Render the official JIS SVG cable cross graphic (stretched automatically by the browser to match column span)
+                const isRightCable = symbol === "c2r" || symbol === "c3r";
+                const file = isRightCable ? "crossright" : "crossleft";
+                cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
             } else {
                 // Render standard Japanese JIS SVG vector graphics
                 if (symbol === "-") {
