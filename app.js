@@ -46,6 +46,14 @@ window.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // PARSER ENGINE
 // ==========================================
+// Helper to get virtual stitch width (e.g. c2r cable spans 4 columns)
+function getStitchWidth(symbol) {
+    if (symbol === "c2r" || symbol === "c2l") return 4;
+    return 1;
+}
+
+let compilerWarnings = [];
+
 function compilePattern() {
     const text = patternInput.value;
     const lines = text.split("\n").map(l => l.trim().toLowerCase());
@@ -54,19 +62,34 @@ function compilePattern() {
     let totalRows = 103;
     let parsedGrid = [];
     let stitchDictionary = {};
+    compilerWarnings = []; // Reset warnings list
 
     // 1. Read configuration parameters and stitch definitions dynamically
     lines.forEach(line => {
         if (line.startsWith("cast on:")) {
             castOn = parseInt(line.replace("cast on:", "").trim()) || 126;
         } else if (line.startsWith("pattern ")) {
-            // Parse custom stitch definitions: pattern name: symbol_string
+            // Parse custom stitch definitions: pattern name: symbol_string (repeat X)
             const cleanLine = line.replace("pattern ", "").trim();
             const colonIdx = cleanLine.indexOf(":");
             if (colonIdx !== -1) {
                 const name = cleanLine.substring(0, colonIdx).trim().toLowerCase();
-                const symbolsStr = cleanLine.substring(colonIdx + 1).replace(/\s+/g, "");
-                stitchDictionary[name] = Array.from(symbolsStr);
+                
+                // Extract repeat size if specified, else compute based on symbol list
+                const repeatMatch = cleanLine.match(/\(repeat\s+(\d+)\)/);
+                const cleanSymbolsText = cleanLine.substring(colonIdx + 1).replace(/\(repeat\s+\d+\)/, "").trim();
+                
+                // Split by spaces, e.g. "c2r | |" -> ["c2r", "|", "|"]
+                const symbolsArray = cleanSymbolsText.split(/\s+/).filter(s => s !== "");
+                
+                // Calculate virtual repeat width of the sequence
+                const computedWidth = symbolsArray.reduce((acc, sym) => acc + getStitchWidth(sym), 0);
+                const repeatSize = repeatMatch ? parseInt(repeatMatch[1]) : computedWidth;
+                
+                stitchDictionary[name] = {
+                    symbols: symbolsArray,
+                    repeat: repeatSize
+                };
             }
         }
         
@@ -125,10 +148,37 @@ function compilePattern() {
                     let segment = [];
                     const definition = stitchDictionary[patternName];
                     
-                    if (definition && definition.length > 0) {
-                        // Cycle through custom symbols to fill the segment width
-                        for (let i = 0; i < count; i++) {
-                            segment.push(definition[i % definition.length]);
+                    if (definition && definition.symbols.length > 0) {
+                        // Validate repeat multiples and trigger alerts
+                        const repeatSize = definition.repeat;
+                        if (count % repeatSize !== 0) {
+                            compilerWarnings.push(`⚠️ **Row 25 Alert**: Pattern ${patternName.toUpperCase()} has block width ${count}, which is not a multiple of its stitch repeat size (${repeatSize}).`);
+                        }
+                        
+                        // Populate segment by cycling symbols and inserting spans
+                        let currentSegWidth = 0;
+                        let idx = 0;
+                        while (currentSegWidth < count) {
+                            const sym = definition.symbols[idx % definition.symbols.length];
+                            const symWidth = getStitchWidth(sym);
+                            
+                            if (currentSegWidth + symWidth <= count) {
+                                segment.push(sym);
+                                if (symWidth > 1) {
+                                    // Push empty span-holder tags for the expanded column layout cells
+                                    for (let s = 1; s < symWidth; s++) {
+                                        segment.push("span-holder");
+                                    }
+                                }
+                                currentSegWidth += symWidth;
+                            } else {
+                                // Remaining space is too small for a multi-stitch cable, pad with standard Knit
+                                while (currentSegWidth < count) {
+                                    segment.push("|");
+                                    currentSegWidth++;
+                                }
+                            }
+                            idx++;
                         }
                     } else {
                         // Fallback to stockinette
@@ -216,6 +266,15 @@ function compilePattern() {
     appState.gridData = parsedGrid;
     saveToLocalStorage();
     renderGrid();
+
+    // Render warning alert banner if repeat mismatches exist
+    const warningBox = document.getElementById("compiler-warnings");
+    if (compilerWarnings.length > 0) {
+        warningBox.innerHTML = compilerWarnings.join("<br>");
+        warningBox.style.display = "block";
+    } else {
+        warningBox.style.display = "none";
+    }
 }
 
 // ==========================================
@@ -244,42 +303,69 @@ function renderGrid() {
         
         // Add Stitch Cells
         rowData.forEach((symbol, c) => {
+            // 1. Skip rendering span-holder elements (they are visually covered by grid-column spans)
+            if (symbol === "span-holder") {
+                const dummy = document.createElement("div");
+                dummy.className = "stitch-cell span-holder";
+                gridElement.appendChild(dummy);
+                return;
+            }
+            
             const cell = document.createElement("div");
-            
-            // Apply CSS class based on symbol type for styling
             let symbolClass = "";
-            if (symbol === "-") symbolClass = "purl-symbol";
-            else if (symbol === "o") symbolClass = "yo-symbol";
-            else if (symbol === "/" || symbol === "\\") symbolClass = "dec-symbol";
             
-            // Add spacer-cell class if it's empty padding
-            if (symbol === "") {
-                symbolClass += " spacer-cell";
+            // 2. Render 4-stitch spanned cable blocks
+            if (symbol === "c2r" || symbol === "c2l") {
+                symbolClass = symbol === "c2r" ? "cable-span-4 c2r-symbol" : "cable-span-4 c2l-symbol";
+                const isC2R = symbol === "c2r";
+                
+                // Render custom SVG crossing diagonal lines
+                cell.innerHTML = isC2R ? `
+                  <svg width="100%" height="100%" viewBox="0 0 96 24" preserveAspectRatio="none" style="display: block;">
+                    <line x1="0" y1="24" x2="96" y2="0" stroke="var(--secondary-denim)" stroke-width="1" stroke-dasharray="3,3"/>
+                    <line x1="0" y1="0" x2="96" y2="24" stroke="var(--secondary-denim)" stroke-width="2"/>
+                  </svg>
+                ` : `
+                  <svg width="100%" height="100%" viewBox="0 0 96 24" preserveAspectRatio="none" style="display: block;">
+                    <line x1="0" y1="0" x2="96" y2="24" stroke="var(--secondary-denim)" stroke-width="1" stroke-dasharray="3,3"/>
+                    <line x1="0" y1="24" x2="96" y2="0" stroke="var(--secondary-denim)" stroke-width="2"/>
+                  </svg>
+                `;
+            } else {
+                // Render standard stitch symbols
+                if (symbol === "-") symbolClass = "purl-symbol";
+                else if (symbol === "o") symbolClass = "yo-symbol";
+                else if (symbol === "/" || symbol === "\\") symbolClass = "dec-symbol";
+                
+                if (symbol === "") {
+                    symbolClass += " spacer-cell";
+                }
+                cell.innerText = symbol === "-" ? "" : symbol;
             }
             
             cell.className = `stitch-cell font-symbol ${symbolClass}`;
-            cell.innerText = symbol === "-" ? "" : symbol;
             
-            // Set hover tooltip showing coordinates (Right-to-Left stitch numbering, ignoring left/right padding)
-            const stitchNum = symbol !== "" ? rowData.slice(c).filter(s => s !== "").length : 0;
-            if (symbol !== "") {
-                cell.title = `Row ${rowNum}, Stitch ${stitchNum}`;
+            // Set hover tooltip coordinates (RTL counting, skipping buffer spaces and spans)
+            const stitchNum = (symbol !== "" && symbol !== "span-holder") ? 
+                              rowData.slice(c).filter(s => s !== "" && s !== "span-holder").length : 0;
+            if (symbol !== "" && symbol !== "span-holder") {
+                const label = (symbol === "c2r" || symbol === "c2l") ? "Cable (4 sts)" : "Stitch";
+                cell.title = `Row ${rowNum}, ${label} ${stitchNum}`;
             } else {
-                cell.title = "Spacer (Shaping Buffer)";
+                cell.title = symbol === "span-holder" ? "Spanned Cell" : "Spacer (Shaping Buffer)";
             }
             
-            // Highlight row if it is the current active knitting row (ONLY in View Mode)
-            if (appState.mode === "view" && rowNum === appState.currentRow && symbol !== "") {
+            // Highlight row if active (View Mode only)
+            if (appState.mode === "view" && rowNum === appState.currentRow && symbol !== "" && symbol !== "span-holder") {
                 cell.classList.add("active-row-cell");
-                // Highlight a 10-stitch window starting from currentStitch
                 if (stitchNum >= appState.currentStitch && stitchNum < appState.currentStitch + 10) {
                     cell.classList.add("active-stitch-cell");
                 }
             }
             
-            // Interaction: Click to cycle symbol (ONLY in Edit Mode, disabled on spacers)
+            // Interaction: Click to cycle symbol (Edit Mode only, disabled on spacers/holders)
             cell.addEventListener("click", () => {
-                if (appState.mode !== "edit" || symbol === "") return;
+                if (appState.mode !== "edit" || symbol === "" || symbol === "span-holder") return;
                 
                 const currentIdx = STITCH_CYCLE.indexOf(symbol);
                 const nextIdx = (currentIdx + 1) % STITCH_CYCLE.length;
