@@ -141,26 +141,38 @@ function compilePattern() {
             }
         }
 
-        // --- D. Dynamic Shaping (Rows 103-120: st st inc/dec 1 at the end of each row) ---
-        else if ((line.includes("inc ") || line.includes("dec ")) && line.includes("end of each row")) {
+        // --- D. Dynamic Shaping (Rows 103-120: st st inc/dec 1 at each end of the row) ---
+        else if ((line.includes("inc ") || line.includes("dec ")) && 
+                 (line.includes("end of each") || line.includes("each end") || line.includes("both ends"))) {
             const rangeMatch = line.match(/rows (\d+)-(\d+)/);
             if (rangeMatch) {
                 const startRow = parseInt(rangeMatch[1]);
                 const endRow = parseInt(rangeMatch[2]);
                 const isIncrease = line.includes("inc ");
+                const atBothEnds = line.includes("each end") || line.includes("both ends");
                 
                 // Base width on the row prior to startRow (e.g. Row 102 width = 127)
                 let currentWidth = parsedGrid[startRow - 2] ? parsedGrid[startRow - 2].filter(s => s !== "").length : castOn;
                 
                 for (let r = startRow - 1; r < endRow; r++) {
-                    currentWidth += isIncrease ? 1 : -1;
+                    const shift = atBothEnds ? 2 : 1;
+                    currentWidth += isIncrease ? shift : -shift;
                     
                     // Populate row with stockinette (All Knits)
                     let rowStitches = Array(currentWidth).fill("|");
                     
-                    if (currentWidth > 0) {
-                        // Mark the increase with YO (o) or decrease with K2Tog (/)
-                        rowStitches[currentWidth - 1] = isIncrease ? "o" : "/"; 
+                    if (currentWidth >= 2 && atBothEnds) {
+                        // Place symbols at both edges
+                        if (isIncrease) {
+                            rowStitches[0] = "o";
+                            rowStitches[currentWidth - 1] = "o";
+                        } else {
+                            rowStitches[0] = "\\"; // SSK left decrease at start of row
+                            rowStitches[currentWidth - 1] = "/"; // K2tog right decrease at end of row
+                        }
+                    } else if (currentWidth >= 1) {
+                        // Single-sided edge symbol
+                        rowStitches[currentWidth - 1] = isIncrease ? "o" : "/";
                     }
                     
                     parsedGrid[r] = rowStitches;
