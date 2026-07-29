@@ -73,43 +73,53 @@ function parseSegments(sequenceText, stitchDictionary) {
             const count = parseInt(parts[1].replace(/\(.*\)/, "").trim());
             
             let segment = [];
-            const definition = stitchDictionary[patternName];
             
-            if (definition && definition.symbols.length > 0) {
-                // Validate repeat multiples and trigger alerts
-                const repeatSize = definition.repeat;
-                if (count % repeatSize !== 0) {
-                    compilerWarnings.push(`⚠️ **Alert**: Pattern ${patternName.toUpperCase()} has block width ${count}, which is not a multiple of its stitch repeat size (${repeatSize}).`);
-                }
+            // Check built-in standard stitch shortcuts first
+            if (patternName === "-") {
+                segment = Array(count).fill("-");
+            } else if (patternName === "|") {
+                segment = Array(count).fill("|");
+            } else if (patternName === "o") {
+                segment = Array(count).fill("o");
+            } else {
+                const definition = stitchDictionary[patternName];
                 
-                // Populate segment by cycling symbols and inserting spans
-                let currentSegWidth = 0;
-                let idx = 0;
-                while (currentSegWidth < count) {
-                    const sym = definition.symbols[idx % definition.symbols.length];
-                    const symWidth = getStitchWidth(sym);
+                if (definition && definition.symbols.length > 0) {
+                    // Validate repeat multiples and trigger alerts
+                    const repeatSize = definition.repeat;
+                    if (count % repeatSize !== 0) {
+                        compilerWarnings.push(`⚠️ **Alert**: Pattern ${patternName.toUpperCase()} has block width ${count}, which is not a multiple of its stitch repeat size (${repeatSize}).`);
+                    }
                     
-                    if (currentSegWidth + symWidth <= count) {
-                        segment.push(sym);
-                        if (symWidth > 1) {
-                            // Push empty span-holder tags for the expanded column layout cells
-                            for (let s = 1; s < symWidth; s++) {
-                                segment.push("span-holder");
+                    // Populate segment by cycling symbols and inserting spans
+                    let currentSegWidth = 0;
+                    let idx = 0;
+                    while (currentSegWidth < count) {
+                        const sym = definition.symbols[idx % definition.symbols.length];
+                        const symWidth = getStitchWidth(sym);
+                        
+                        if (currentSegWidth + symWidth <= count) {
+                            segment.push(sym);
+                            if (symWidth > 1) {
+                                // Push empty span-holder tags for the expanded column layout cells
+                                for (let s = 1; s < symWidth; s++) {
+                                    segment.push("span-holder");
+                                }
+                            }
+                            currentSegWidth += symWidth;
+                        } else {
+                            // Remaining space is too small, pad with standard Knit
+                            while (currentSegWidth < count) {
+                                segment.push("|");
+                                currentSegWidth++;
                             }
                         }
-                        currentSegWidth += symWidth;
-                    } else {
-                        // Remaining space is too small, pad with standard Knit
-                        while (currentSegWidth < count) {
-                            segment.push("|");
-                            currentSegWidth++;
-                        }
+                        idx++;
                     }
-                    idx++;
+                } else {
+                    // Fallback to stockinette
+                    segment = Array(count).fill("|");
                 }
-            } else {
-                // Fallback to stockinette
-                segment = Array(count).fill("|");
             }
             rowStitches = rowStitches.concat(segment);
         }
@@ -457,10 +467,38 @@ function renderGrid() {
                 const is6 = symbol === "c3r" || symbol === "c3l";
                 symbolClass = is6 ? `cable-span-6 ${symbol}-symbol` : `cable-span-4 ${symbol}-symbol`;
                 
-                // Render the official JIS SVG cable cross graphic (stretched automatically by the browser to match column span)
-                const isRightCable = symbol === "c2r" || symbol === "c3r";
-                const file = isRightCable ? "crossright" : "crossleft";
-                cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
+                if (is6) {
+                    const isC3L = symbol === "c3l";
+                    // Draw a custom 6-column vector layout connecting each column center point
+                    cell.innerHTML = isC3L ? `
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                        <!-- Underlap lines slanting bottom-left to top-right (dashed) -->
+                        <line x1="12" y1="24" x2="84" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="60" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <!-- Overlap lines slanting bottom-right to top-left (solid) -->
+                        <line x1="84" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="132" y1="24" x2="60" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    ` : `
+                      <svg width="100%" height="100%" viewBox="0 0 144 24" preserveAspectRatio="none" style="display: block;">
+                        <!-- Underlap lines slanting bottom-right to top-left (dashed) -->
+                        <line x1="84" y1="24" x2="12" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="108" y1="24" x2="36" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <line x1="132" y1="24" x2="60" y2="0" stroke="var(--text-charcoal)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                        <!-- Overlap lines slanting bottom-left to top-right (solid) -->
+                        <line x1="12" y1="24" x2="84" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="36" y1="24" x2="108" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="60" y1="24" x2="132" y2="0" stroke="var(--text-charcoal)" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    `;
+                } else {
+                    // Render the official JIS SVG cable cross graphic (stretched automatically by the browser to match column span)
+                    const isRightCable = symbol === "c2r";
+                    const file = isRightCable ? "crossright" : "crossleft";
+                    cell.innerHTML = `<img src="symbols/${file}.svg" alt="Cable" style="width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: 0.95;"/>`;
+                }
             } else {
                 // Render standard Japanese JIS SVG vector graphics
                 if (symbol === "-") {
