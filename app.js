@@ -359,21 +359,24 @@ function renderGrid() {
                   </svg>
                 `;
             } else {
-                // Render standard Japanese JIS symbols
+                // Render standard Japanese JIS SVG vector graphics
                 if (symbol === "-") {
                     symbolClass = "purl-symbol";
                     cell.innerText = ""; // Purl rendered as clean blank space per preference
                 } else if (symbol === "o") {
                     symbolClass = "yo-symbol";
-                    cell.innerText = "○"; // JIS Yarn Over circle
+                    cell.innerHTML = `<img src="symbols/yarnover.svg" alt="YO" style="width: 14px; height: 14px; object-fit: contain; pointer-events: none;"/>`;
                 } else if (symbol === "/") {
                     symbolClass = "dec-symbol";
-                    cell.innerText = "人"; // JIS K2tog Right Decrease
+                    cell.innerHTML = `<img src="symbols/decreaseright.svg" alt="K2Tog" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none;"/>`;
                 } else if (symbol === "\\") {
                     symbolClass = "dec-symbol";
-                    cell.innerText = "入"; // JIS SSK Left Decrease
+                    cell.innerHTML = `<img src="symbols/decreaseleft.svg" alt="SSK" style="width: 16px; height: 20px; object-fit: contain; pointer-events: none;"/>`;
+                } else if (symbol === "|") {
+                    symbolClass = "knit-symbol";
+                    cell.innerHTML = `<img src="symbols/knit.svg" alt="Knit" style="width: 12px; height: 20px; object-fit: contain; pointer-events: none; opacity: 0.85;"/>`;
                 } else {
-                    cell.innerText = symbol; // Knit '|'
+                    cell.innerText = symbol;
                 }
                 
                 if (symbol === "") {
