@@ -338,7 +338,7 @@ function scrollToActiveStitch() {
     }
 }
 
-// Stitch Navigation Logic
+// Stitch Navigation Logic (10-Stitch blocks)
 function nextStitch() {
     if (appState.mode !== "view") return;
     
@@ -346,12 +346,13 @@ function nextStitch() {
     const rowData = appState.gridData[appState.currentRow - 1];
     const activeStitchCount = rowData ? rowData.filter(s => s !== "").length : appState.columnsCount;
     
-    if (appState.currentStitch < activeStitchCount) {
-        appState.currentStitch++;
+    // Check if we can slide by 10 more stitches within the current row
+    if (appState.currentStitch + 9 < activeStitchCount) {
+        appState.currentStitch += 10;
         saveToLocalStorage();
         updateTrackerUI();
     } else {
-        // Finished the row! Move to next row and reset stitch to 1
+        // Reached the end of the row! Move to next row and reset stitch to 1
         if (appState.currentRow < appState.targetRows) {
             appState.currentRow++;
             appState.currentStitch = 1;
@@ -366,17 +367,21 @@ function nextStitch() {
 function prevStitch() {
     if (appState.mode !== "view") return;
     
-    if (appState.currentStitch > 1) {
-        appState.currentStitch--;
+    if (appState.currentStitch > 10) {
+        appState.currentStitch -= 10;
         saveToLocalStorage();
         updateTrackerUI();
     } else {
-        // Go back to the end of the previous row
+        // Go back to the end block of the previous row
         if (appState.currentRow > 1) {
             appState.currentRow--;
             const prevRowData = appState.gridData[appState.currentRow - 1];
             const prevActiveStitchCount = prevRowData ? prevRowData.filter(s => s !== "").length : appState.columnsCount;
-            appState.currentStitch = prevActiveStitchCount;
+            
+            // Calculate the starting stitch index of the last 10-stitch block of the previous row (e.g. 121 for 126)
+            const lastBlockStart = Math.floor((prevActiveStitchCount - 1) / 10) * 10 + 1;
+            appState.currentStitch = lastBlockStart;
+            
             saveToLocalStorage();
             updateTrackerUI();
         }
