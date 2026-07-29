@@ -4,13 +4,16 @@ let appState = {
     targetRows: 103,
     columnsCount: 126,
     gridData: [], // 2D array: row 0 is Row 1 (bottom), row 102 is Row 103 (top)
-    zoomScale: 1.0
+    zoomScale: 1.0,
+    mode: "view" // Modes: "view" (read-only tracking) or "edit" (interactive design editing)
 };
 
 // Stitch symbol cycle: | (Knit) -> - (Purl) -> o (YO) -> / (K2tog) -> \ (SSK)
 const STITCH_CYCLE = ["|", "-", "o", "/", "\\"];
 
 // DOM Elements
+const modeViewBtn = document.getElementById("mode-view-btn");
+const modeEditBtn = document.getElementById("mode-edit-btn");
 const patternInput = document.getElementById("pattern-input");
 const compileBtn = document.getElementById("compile-btn");
 const activeRowVal = document.getElementById("active-row-num");
@@ -216,14 +219,14 @@ function renderGrid() {
                 cell.title = "Spacer (Increase Buffer)";
             }
             
-            // Highlight row if it is the current active knitting row
-            if (rowNum === appState.currentRow && symbol !== "") {
+            // Highlight row if it is the current active knitting row (ONLY in View Mode)
+            if (appState.mode === "view" && rowNum === appState.currentRow && symbol !== "") {
                 cell.classList.add("active-row-cell");
             }
             
-            // Interaction: Click to cycle symbol (disabled on spacers)
+            // Interaction: Click to cycle symbol (ONLY in Edit Mode, disabled on spacers)
             cell.addEventListener("click", () => {
-                if (symbol === "") return;
+                if (appState.mode !== "edit" || symbol === "") return;
                 
                 const currentIdx = STITCH_CYCLE.indexOf(symbol);
                 const nextIdx = (currentIdx + 1) % STITCH_CYCLE.length;
@@ -282,15 +285,26 @@ function updateTrackerUI() {
     activeRowVal.innerText = appState.currentRow;
     rowProgress.innerText = `Row ${appState.currentRow} of ${appState.targetRows}`;
     
-    undoBtn.disabled = appState.currentRow <= 1;
-    nextBtn.disabled = appState.currentRow >= appState.targetRows;
+    // Disable counter control buttons if we are in Edit Mode
+    undoBtn.disabled = appState.mode === "edit" || appState.currentRow <= 1;
+    nextBtn.disabled = appState.mode === "edit" || appState.currentRow >= appState.targetRows;
     
+    // Visually style the tracker panel differently when editing
+    const activeCard = document.querySelector(".active-tracker");
+    if (appState.mode === "edit") {
+        activeCard.style.opacity = "0.5";
+    } else {
+        activeCard.style.opacity = "1.0";
+    }
+
     // Highlight cells of active row
     const cells = document.querySelectorAll(".stitch-cell");
     cells.forEach(c => c.classList.remove("active-row-cell"));
     
     renderGrid();
-    scrollToActiveRow();
+    if (appState.mode === "view") {
+        scrollToActiveRow();
+    }
 }
 
 function scrollToActiveRow() {
@@ -303,6 +317,22 @@ function scrollToActiveRow() {
 }
 
 // Action Handlers
+modeViewBtn.addEventListener("click", () => {
+    appState.mode = "view";
+    modeViewBtn.classList.add("active");
+    modeEditBtn.classList.remove("active");
+    saveToLocalStorage();
+    updateTrackerUI();
+});
+
+modeEditBtn.addEventListener("click", () => {
+    appState.mode = "edit";
+    modeEditBtn.classList.add("active");
+    modeViewBtn.classList.remove("active");
+    saveToLocalStorage();
+    updateTrackerUI();
+});
+
 nextBtn.addEventListener("click", () => {
     if (appState.currentRow < appState.targetRows) {
         appState.currentRow++;
@@ -329,6 +359,12 @@ clearBtn.addEventListener("click", () => {
     if (confirm("Reset current row tracking and clear modifications?")) {
         localStorage.clear();
         appState.currentRow = 1;
+        appState.mode = "view";
+        
+        // Reset UI buttons
+        modeViewBtn.classList.add("active");
+        modeEditBtn.classList.remove("active");
+        
         compilePattern();
         updateTrackerUI();
     }
@@ -358,6 +394,7 @@ function saveToLocalStorage() {
     localStorage.setItem("knitflow_columns_count", appState.columnsCount);
     localStorage.setItem("knitflow_grid_data", JSON.stringify(appState.gridData));
     localStorage.setItem("knitflow_pattern_input", patternInput.value);
+    localStorage.setItem("knitflow_mode", appState.mode);
 }
 
 function loadFromLocalStorage() {
@@ -366,10 +403,22 @@ function loadFromLocalStorage() {
     const savedCols = localStorage.getItem("knitflow_columns_count");
     const savedGrid = localStorage.getItem("knitflow_grid_data");
     const savedInput = localStorage.getItem("knitflow_pattern_input");
+    const savedMode = localStorage.getItem("knitflow_mode");
     
     if (savedRow) appState.currentRow = parseInt(savedRow);
     if (savedTarget) appState.targetRows = parseInt(savedTarget);
     if (savedCols) appState.columnsCount = parseInt(savedCols);
     if (savedGrid) appState.gridData = JSON.parse(savedGrid);
     if (savedInput) patternInput.value = savedInput;
+    
+    if (savedMode) {
+        appState.mode = savedMode;
+        if (savedMode === "edit") {
+            modeEditBtn.classList.add("active");
+            modeViewBtn.classList.remove("active");
+        } else {
+            modeViewBtn.classList.add("active");
+            modeEditBtn.classList.remove("active");
+        }
+    }
 }
