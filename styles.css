@@ -419,12 +419,37 @@ textarea:focus {
     overflow: hidden;
 }
 
+/* Overlay vertical grid lines at 24px boundaries to align with standard cells */
+.stitch-cell.cable-span-4::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image: linear-gradient(to right, transparent 23px, var(--border-color) 23px, var(--border-color) 24px);
+    background-size: 24px 100%;
+}
+
 .stitch-cell.cable-span-6 {
     grid-column: span 6;
     width: 144px; /* 6 columns * 24px width */
     position: relative;
     padding: 0;
     overflow: hidden;
+}
+
+.stitch-cell.cable-span-6::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image: linear-gradient(to right, transparent 23px, var(--border-color) 23px, var(--border-color) 24px);
+    background-size: 24px 100%;
 }
 
 /* Hide grid elements that are occupied by the spanning cable block */
