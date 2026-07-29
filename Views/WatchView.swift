@@ -21,15 +21,15 @@ struct WatchContentView: View {
                 }
             }) {
                 VStack(spacing: 0) {
-                    Text("ROW")
-                        .font(.system(size: 9, weight: .bold))
+                    Text("KNITTING")
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundColor(.white.opacity(0.6))
                     Text("\(project.currentRow)")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                    Text("Next Row")
-                        .font(.system(size: 8))
-                        .foregroundColor(.white.opacity(0.8))
+                    Text("Complete")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white.opacity(0.9))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(

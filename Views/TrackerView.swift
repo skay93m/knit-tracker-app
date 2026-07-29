@@ -65,7 +65,7 @@ struct TrackerView: View {
             
             // 1. Current Row Display
             VStack(spacing: 8) {
-                Text("ROW")
+                Text("KNITTING")
                     .font(.caption)
                     .tracking(4)
                     .foregroundColor(.secondary)
@@ -91,12 +91,15 @@ struct TrackerView: View {
                         .frame(width: 200, height: 200)
                         .shadow(color: Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
                     
-                    VStack {
-                        Image(systemName: "plus")
-                            .font(.system(size: 40, weight: .bold))
+                    VStack(spacing: 4) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
-                        Text("Next Row")
+                        Text("Complete")
                             .font(.headline)
+                            .foregroundColor(.white)
+                        Text("Row \(project.currentRow)")
+                            .font(.subheadline)
                             .foregroundColor(.white.opacity(0.9))
                     }
                 }
